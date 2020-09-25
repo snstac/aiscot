@@ -14,6 +14,9 @@ For use with CoT systems such as ATAK, WinTAK, RaptorX,
 Falconview, etc. See https://www.civtak.org/ for more information on the TAK
 program.
 
+Utilized for an open ocean boat race in the Northern Pacific Ocean, as
+described in this article: http://ampledata.org/boat_race_support.html
+
 Installation
 ============
 
@@ -76,13 +79,13 @@ Build Status
 
 Master:
 
-.. image:: https://travis-ci.org/ampledata/aiscot.svg?branch=master
-    :target: https://travis-ci.org/ampledata/aiscot
+.. image:: https://travis-ci.com/ampledata/aiscot.svg?branch=master
+    :target: https://travis-ci.com/ampledata/aiscot
 
 Develop:
 
-.. image:: https://travis-ci.org/ampledata/aiscot.svg?branch=develop
-    :target: https://travis-ci.org/ampledata/aiscot
+.. image:: https://travis-ci.com/ampledata/aiscot.svg?branch=develop
+    :target: https://travis-ci.com/ampledata/aiscot
 
 
 Source

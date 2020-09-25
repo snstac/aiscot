@@ -15,7 +15,7 @@ import setuptools
 __title__ = 'aiscot'
 __version__ = '1.0.0b1'
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
-__copyright__ = 'Copyright 2020 Greg Albrecht'
+__copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
 
 

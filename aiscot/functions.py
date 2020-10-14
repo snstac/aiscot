@@ -19,7 +19,7 @@ def ais_to_cot(ais_sentence: dict) -> pycot.Event:
     :param ais_sentence: AIS Sentence to convert to CoT.
     :type ais_sentence: `dict`
     """
-    time = datetime.datetime.now()
+    time = datetime.datetime.now(datetime.timezone.utc)
 
     lat = ais_sentence.get('y')
     lon = ais_sentence.get('x')

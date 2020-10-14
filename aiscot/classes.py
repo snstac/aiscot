@@ -9,6 +9,8 @@ import threading
 
 import ais.stream
 
+import pycot
+
 import aiscot
 
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
@@ -42,30 +44,27 @@ class AISCoT(threading.Thread):
         self._stopped = True
         return self._stopped
 
-    def send_cot(self, ais_sentence):
+    def send_cot(self, ais_sentence) -> bool:
         """Sends an AIS Frame to a Cursor-on-Target Host."""
         cot_event = aiscot.ais_to_cot(ais_sentence)
         if cot_event is None:
-            return
+            return False
 
-        if ':' in self.cot_host:
-            addr, port = self.cot_host.split(':')
-        else:
-            addr = self.cot_host
-            port = aiscot.DEFAULT_COT_PORT
-
-        full_addr = (addr, int(port))
         rendered_event = cot_event.render(encoding='UTF-8', standalone=True)
 
         self._logger.debug(
-            'Sending CoT to %s: "%s"', full_addr, rendered_event)
+            'Sending CoT to %s : "%s"', self.cot_host, rendered_event)
 
-        cot_int = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        cot_int.sendto(rendered_event, full_addr)
+        return self.net_client.sendall(rendered_event)
 
     def run(self):
+        """Runs this Thread, reads AIS & outputs CoT."""
+        self._logger.info('Running AISCoT Thread...')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind(('0.0.0.0', self.ais_port))
+
+        self.net_client = pycot.NetworkClient(self.cot_host)
+
         while 1:
             # TODO: Change this to a generator.
             for msg in ais.stream.decode(sock.makefile('r'), keep_nmea=True):

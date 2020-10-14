@@ -13,7 +13,7 @@ import sys
 import setuptools
 
 __title__ = 'aiscot'
-__version__ = '1.0.0'
+__version__ = '2.0.0'
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
 __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
@@ -44,15 +44,9 @@ setuptools.setup(
     url='https://github.com/ampledata/aiscot',
     zip_safe=False,
     include_package_data=True,
-    setup_requires=[
-        'coverage >= 3.7.1',
-        'httpretty >= 0.8.10',
-        'pytest'
-    ],
     install_requires=[
         'libais >= 0.16',
-        'pycot >= 2.0.0',
-        'gexml'
+        'pycot >= 2.2.0'
     ],
     classifiers=[
         'Programming Language :: Python',
@@ -61,5 +55,5 @@ setuptools.setup(
     keywords=[
         'Sailing', 'AIS', 'Cursor on Target', 'ATAK', 'TAK', 'CoT'
     ],
-    entry_points={'console_scripts': ['aiscot = aiscot.cmd:cli']}
+    entry_points={'console_scripts': ['aiscot = aiscot.commands:cli']}
 )

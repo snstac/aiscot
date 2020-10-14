@@ -61,7 +61,7 @@ class AISCoT(threading.Thread):
         """Runs this Thread, reads AIS & outputs CoT."""
         self._logger.info('Running AISCoT Thread...')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind(('0.0.0.0', self.ais_port))
+        sock.bind(('0.0.0.0', int(self.ais_port)))
 
         self.net_client = pycot.NetworkClient(self.cot_host)
 

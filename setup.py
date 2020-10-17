@@ -13,7 +13,7 @@ import sys
 import setuptools
 
 __title__ = 'aiscot'
-__version__ = '2.0.1'
+__version__ = '2.1.0b1'
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
 __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
@@ -32,16 +32,15 @@ publish()
 
 setuptools.setup(
     name=__title__,
-    version=__version__,
+    packages=[__title__],
+    package_dir={__title__: __title__},
+    url=f'https://github.com/ampledata/{__title__}',
     description='AIS Cursor-on-Target Gateway.',
     author='Greg Albrecht',
     author_email='oss@undef.net',
-    packages=['aiscot'],
     package_data={'': ['LICENSE']},
-    package_dir={'aiscot': 'aiscot'},
     license=open('LICENSE').read(),
     long_description=open('README.rst').read(),
-    url='https://github.com/ampledata/aiscot',
     zip_safe=False,
     include_package_data=True,
     install_requires=[

@@ -4,8 +4,10 @@
 """AIS Cursor-on-Target Class Definitions."""
 
 import logging
+import random
 import socket
 import threading
+import time
 
 import ais.stream
 
@@ -66,7 +68,7 @@ class AISCoT(threading.Thread):
         self.net_client = pycot.NetworkClient(self.cot_host)
 
         while 1:
-            # TODO: Change this to a generator.
             for msg in ais.stream.decode(sock.makefile('r'), keep_nmea=True):
                 self._logger.debug('Received AIS: "%s"', msg)
                 self.send_cot(msg)
+                time.sleep(random.random())

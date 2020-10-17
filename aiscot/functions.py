@@ -12,7 +12,7 @@ __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
 
 
-def ais_to_cot(ais_sentence: dict) -> pycot.Event:
+def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event.
 
@@ -20,6 +20,7 @@ def ais_to_cot(ais_sentence: dict) -> pycot.Event:
     :type ais_sentence: `dict`
     """
     time = datetime.datetime.now(datetime.timezone.utc)
+    cot_type = cot_type or 'a-n-S-X-M' #
 
     lat = ais_sentence.get('y')
     lon = ais_sentence.get('x')
@@ -28,27 +29,52 @@ def ais_to_cot(ais_sentence: dict) -> pycot.Event:
     if lat is None or lon is None or mmsi is None:
         return None
 
+    name = f"MMSI.{mmsi}"
+    _name = ais_sentence.get('name', '').replace('@', '').strip()
+    if _name:
+        callsign = _name
+    else:
+        callsign = mmsi
+
     point = pycot.Point()
     point.lat = lat
     point.lon = lon
     point.ce = '10'
     point.le = '10'
-    point.hae = '10'
+    point.hae = '0'
 
     uid = pycot.UID()
-    uid.Droid = ais_sentence.get('name', mmsi)
+    uid.Droid = name
+
+    contact = pycot.Contact()
+    contact.callsign = callsign
+    contact.hostname = f'https://www.marinetraffic.com/en/ais/details/ships/mmsi:{mmsi}'
+
+    track = pycot.Track()
+    track.course = ais_sentence.get('true_heading', 0)
+    track.speed = ais_sentence.get('sog', 0)
+
+    remarks = pycot.Remarks()
+    _remark = f"MMSI: {mmsi}"
+    if _name:
+        remarks.value = f"Name: {_name} " + _remark
+    else:
+        remarks.value = _remark
 
     detail = pycot.Detail()
     detail.uid = uid
+    detail.contact = contact
+    detail.track = track
+    detail.remarks = remarks
 
     event = pycot.Event()
     event.version = '2.0'
-    event.event_type = 'a-f-G-E-V-C'
-    event.uid = f"AIS.{mmsi}"
+    event.event_type = cot_type
+    event.uid = name
     event.time = time
     event.start = time
     event.stale = time + + datetime.timedelta(hours=1)  # 1 hour expire
-    event.how = 'h-e'
+    event.how = 'm-g'
     event.point = point
     event.detail = detail
 

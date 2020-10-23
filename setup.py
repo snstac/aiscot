@@ -45,7 +45,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         'libais >= 0.16',
-        'pycot >= 2.4.0'
+        'pycot >= 2.3.0'
     ],
     classifiers=[
         'Programming Language :: Python',

@@ -48,7 +48,8 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
 
     contact = pycot.Contact()
     contact.callsign = callsign
-    contact.hostname = f'https://www.marinetraffic.com/en/ais/details/ships/mmsi:{mmsi}'
+    # Not supported by FTS 1.1 yet?
+    # contact.hostname = f'https://www.marinetraffic.com/en/ais/details/ships/mmsi:{mmsi}'
 
     track = pycot.Track()
     track.course = ais_sentence.get('true_heading', 0)
@@ -65,7 +66,8 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
     detail.uid = uid
     detail.contact = contact
     detail.track = track
-    detail.remarks = remarks
+    # Not supported by FTS 1.1 yet?
+    # detail.remarks = remarks
 
     event = pycot.Event()
     event.version = '2.0'
@@ -73,7 +75,7 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
     event.uid = name
     event.time = time
     event.start = time
-    event.stale = time + + datetime.timedelta(hours=1)  # 1 hour expire
+    event.stale = time + datetime.timedelta(hours=1)  # 1 hour expire
     event.how = 'm-g'
     event.point = point
     event.detail = detail

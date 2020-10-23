@@ -13,7 +13,7 @@ import sys
 import setuptools
 
 __title__ = 'aiscot'
-__version__ = '2.1.0b1'
+__version__ = '2.1.0'
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
 __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
@@ -45,7 +45,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         'libais >= 0.16',
-        'pycot >= 2.2.0'
+        'pycot >= 2.4.0'
     ],
     classifiers=[
         'Programming Language :: Python',

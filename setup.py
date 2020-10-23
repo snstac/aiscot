@@ -31,6 +31,7 @@ publish()
 
 
 setuptools.setup(
+    version=__version__,
     name=__title__,
     packages=[__title__],
     package_dir={__title__: __title__},

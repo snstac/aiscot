@@ -23,5 +23,5 @@ else:
     LOG_FORMAT = logging.Formatter(
         ('%(asctime)s aiscot %(levelname)s - %(message)s'))
 
-DEFAULT_COT_PORT: int = 8087
 DEFAULT_AIS_PORT: int = 5050
+DEFAULT_STALE_PERIOD: int = 3600

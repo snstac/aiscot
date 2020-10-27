@@ -4,7 +4,10 @@
 """AIS Cursor-on-Target Gateway Commands."""
 
 import argparse
+import queue
 import time
+
+import pytak
 
 import aiscot
 
@@ -18,26 +21,58 @@ def cli():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-P', '--ais_port', help='AIS UDP Port',
+        '-p', '--ais_port', help='AIS UDP Port',
         default=aiscot.DEFAULT_AIS_PORT
     )
     parser.add_argument(
         '-C', '--cot_host', help='Cursor-on-Target Host or Host:Port',
         required=True
     )
+    parser.add_argument(
+        '-P', '--cot_port', help='CoT Destination Port'
+    )
+    parser.add_argument(
+        '-B', '--broadcast', help='UDP Broadcast CoT?',
+        action='store_true'
+    )
+    parser.add_argument(
+        '-S', '--stale', help='CoT Stale period, in hours',
+    )
     opts = parser.parse_args()
 
-    aiscot_i = aiscot.AISCoT(opts.ais_port, opts.cot_host)
+    threads: list = []
+    msg_queue: queue.Queue = queue.Queue()
+
+    aisworker = aiscot.AISWorker(
+        msg_queue=msg_queue,
+        ais_port=opts.ais_port,
+        stale=opts.stale
+    )
+    threads.append(aisworker)
+
+    worker_count = 2
+    for wc in range(0, worker_count - 1):
+        threads.append(
+            pytak.CoTWorker(
+                msg_queue=msg_queue,
+                cot_host=opts.cot_host,
+                cot_port=opts.cot_port,
+                broadcast=opts.broadcast
+            )
+        )
 
     try:
-        aiscot_i.start()
+        [thr.start() for thr in threads]  # NOQA pylint: disable=expression-not-assigned
+        msg_queue.join()
 
-        while aiscot_i.is_alive():
+        while all([thr.is_alive() for thr in threads]):
             time.sleep(0.01)
     except KeyboardInterrupt:
-        aiscot_i.stop()
+        [thr.stop() for thr in
+         threads]  # NOQA pylint: disable=expression-not-assigned
     finally:
-        aiscot_i.stop()
+        [thr.stop() for thr in
+         threads]  # NOQA pylint: disable=expression-not-assigned
 
 
 if __name__ == '__main__':

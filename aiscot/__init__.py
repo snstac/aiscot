@@ -15,12 +15,12 @@ AIS Cursor-on-Target Gateway.
 
 """
 
-from .constants import (LOG_FORMAT, LOG_LEVEL, DEFAULT_COT_PORT,  # NOQA
-                        DEFAULT_AIS_PORT)
+from .constants import (LOG_FORMAT, LOG_LEVEL, DEFAULT_AIS_PORT,  # NOQA
+                        DEFAULT_STALE_PERIOD)
 
 from .functions import ais_to_cot  # NOQA
 
-from .classes import AISCoT  # NOQA
+from .classes import AISWorker  # NOQA
 
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
 __copyright__ = 'Copyright 2020 Orion Labs, Inc.'

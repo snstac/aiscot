@@ -77,5 +77,8 @@ class AISWorker(threading.Thread):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('0.0.0.0', int(self.ais_port)))
 
+        self.msg_queue.put(
+            aiscot.hello_event().render(encoding='UTF-8', standalone=True))
+
         while not self.stopped():
             self._receive_ais()

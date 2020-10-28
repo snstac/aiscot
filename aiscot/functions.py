@@ -7,12 +7,15 @@ import datetime
 
 import pycot
 
+import aiscot
+
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
 __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
 
 
-def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
+def ais_to_cot(ais_sentence: dict, cot_type: str = None,
+               stale: int = None) -> pycot.Event:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event.
 
@@ -20,7 +23,8 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
     :type ais_sentence: `dict`
     """
     time = datetime.datetime.now(datetime.timezone.utc)
-    cot_type = cot_type or 'a-n-S-X-M'
+    cot_type = cot_type or aiscot.DEFAULT_TYPE
+    stale = stale or aiscot.DEFAULT_STALE
 
     lat = ais_sentence.get('y')
     lon = ais_sentence.get('x')
@@ -39,9 +43,9 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
     point = pycot.Point()
     point.lat = lat
     point.lon = lon
-    point.ce = '10'
-    point.le = '10'
-    point.hae = '0'
+    point.ce = '9999999.0'
+    point.le = '9999999.0'
+    point.hae = '9999999.0'
 
     uid = pycot.UID()
     uid.Droid = name
@@ -53,7 +57,14 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
 
     track = pycot.Track()
     track.course = ais_sentence.get('true_heading', 0)
-    track.speed = ais_sentence.get('sog', 0)
+
+    # Speed over ground: 0.1-knot (0.19 km/h) resolution from
+    #                    0 to 102 knots (189 km/h)
+    sog = int(ais_sentence.get('sog', 0))
+    if sog:
+        track.speed = sog * 0.514444
+    else:
+        track.speed = '9999999.0'
 
     remarks = pycot.Remarks()
     _remark = f"MMSI: {mmsi}"
@@ -75,7 +86,7 @@ def ais_to_cot(ais_sentence: dict, cot_type: str = None) -> pycot.Event:
     event.uid = name
     event.time = time
     event.start = time
-    event.stale = time + datetime.timedelta(hours=1)  # 1 hour expire
+    event.stale = time + datetime.timedelta(seconds=stale)  # 1 hour expire
     event.how = 'm-g'
     event.point = point
     event.detail = detail

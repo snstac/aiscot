@@ -3,10 +3,11 @@
 
 """AIS Cursor-on-Target Class Definitions."""
 
+import asyncio
+import io
 import logging
 import queue
 import socket
-import threading
 
 import ais.stream
 
@@ -17,7 +18,7 @@ __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
 
 
-class AISWorker(threading.Thread):
+class AISWorker:
 
     """AIS Cursor-on-Target Threaded Class."""
 
@@ -30,55 +31,70 @@ class AISWorker(threading.Thread):
         _logger.addHandler(_console_handler)
         _logger.propagate = False
 
-    def __init__(self, msg_queue: queue.Queue, ais_port: int = None,
+    def __init__(self, msg_queue, ais_port: int = None,
                  stale: int = None):
         self.msg_queue = msg_queue
         self.ais_port = ais_port or aiscot.DEFAULT_AIS_PORT
-        self.stale = stale or aiscot.DEFAULT_STALE_PERIOD
+        self.stale = stale or aiscot.DEFAULT_STALE
 
-        # Thread setup:
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self._stopper = threading.Event()
-
-    def stop(self):
-        """Stop the thread at the next opportunity."""
-        self._logger.debug('Stopping AISWorker')
-        self._stopper.set()
-
-    def stopped(self):
-        """Checks if the thread is stopped."""
-        return self._stopper.isSet()
-
-    def _put_queue(self, msg: dict) -> None:
-        cot_event = aiscot.ais_to_cot(msg)
-        if cot_event is None:
-            return False
-
-        rendered_event = cot_event.render(encoding='UTF-8', standalone=True)
-
-        if rendered_event:
-            try:
-                self.msg_queue.put(rendered_event, True, 10)
-            except queue.Full as exc:
-                self._logger.exception(exc)
-                self._logger.warning(
-                    'Lost CoT Event (queue full): "%s"', rendered_event)
-
-    def _receive_ais(self):
-        for msg in ais.stream.decode(self.sock.makefile('r'), keep_nmea=True):
-            self._logger.debug('Received AIS: "%s"', msg)
-            self._put_queue(msg)
-
-    def run(self):
+    async def run(self):
         """Runs this Thread, reads AIS & outputs CoT."""
         self._logger.info('Running AISWorker')
+        loop = asyncio.get_event_loop()
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('0.0.0.0', int(self.ais_port)))
-
-        self.msg_queue.put(
+        await self.msg_queue.put(
             aiscot.hello_event().render(encoding='UTF-8', standalone=True))
 
-        while not self.stopped():
-            self._receive_ais()
+        ready = asyncio.Event()
+        trans, proto = await loop.create_datagram_endpoint(
+            lambda: AISNetworkClient(self.msg_queue, ready, self.stale),
+            local_addr=('0.0.0.0', int(self.ais_port))
+        )
+
+        await ready.wait()
+
+
+class AISNetworkClient(asyncio.Protocol):
+
+    _logger = logging.getLogger(__name__)
+    if not _logger.handlers:
+        _logger.setLevel(aiscot.LOG_LEVEL)
+        _console_handler = logging.StreamHandler()
+        _console_handler.setLevel(aiscot.LOG_LEVEL)
+        _console_handler.setFormatter(aiscot.LOG_FORMAT)
+        _logger.addHandler(_console_handler)
+        _logger.propagate = False
+    logging.getLogger('asyncio').setLevel(aiscot.LOG_LEVEL)
+
+    def __init__(self, msg_queue, ready, stale) -> None:
+        self.msg_queue = msg_queue
+        self.ready = ready
+        self.stale = stale
+
+        self.transport = None
+
+    def connection_made(self, transport):
+        self.transport = transport
+        self.address = transport.get_extra_info('peername')
+        self._logger.debug('Connected to %s', self.address)
+        self.ready.set()
+
+    def datagram_received(self, data, addr):
+        # self._logger.debug('Received "%s"', data.decode())
+        d_data = data.decode()
+        for msg in ais.stream.decode(io.StringIO(d_data), keep_nmea=True):
+            self._logger.debug('Received AIS: "%s"', msg)
+
+            cot_event = aiscot.ais_to_cot(msg, stale=self.stale)
+            if cot_event is None:
+                return False
+
+            rendered_event = cot_event.render(encoding='UTF-8', standalone=True)
+
+            if rendered_event:
+                self.msg_queue.put_nowait(rendered_event)
+
+    def connection_lost(self, exc):
+        self.ready.clear()
+        self._logger.warning('Disconnected from %s', self.address)
+        self._logger.exception(exc)

@@ -24,4 +24,5 @@ else:
         ('%(asctime)s aiscot %(levelname)s - %(message)s'))
 
 DEFAULT_AIS_PORT: int = 5050
-DEFAULT_STALE_PERIOD: int = 3600
+DEFAULT_STALE: int = 120
+DEFAULT_TYPE: str = 'a-n-S-X-M'

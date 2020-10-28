@@ -16,7 +16,7 @@ AIS Cursor-on-Target Gateway.
 """
 
 from .constants import (LOG_FORMAT, LOG_LEVEL, DEFAULT_AIS_PORT,  # NOQA
-                        DEFAULT_STALE_PERIOD)
+                        DEFAULT_TYPE, DEFAULT_STALE)
 
 from .functions import ais_to_cot, hello_event  # NOQA
 

@@ -13,7 +13,7 @@ import sys
 import setuptools
 
 __title__ = 'aiscot'
-__version__ = '3.0.0b3'
+__version__ = '3.0.0'
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
 __copyright__ = 'Copyright 2020 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
@@ -47,7 +47,7 @@ setuptools.setup(
     install_requires=[
         'libais >= 0.16',
         'pycot >= 2.5.0',
-        'pytak >= 2.1.0'
+        'pytak >= 3.0.0'
     ],
     classifiers=[
         'Programming Language :: Python',

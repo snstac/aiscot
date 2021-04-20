@@ -1,21 +1,30 @@
 aiscot - AIS Cursor-on-Target Gateway.
 ****************************************
+**IF YOU HAVE AN URGENT OPERATIONAL NEED**: Email ops@undef.net or call/sms +1-415-598-8226
 
 .. image:: docs/screenshot-1601068921-25.png
    :alt: Screenshot of AIS points in ATAK-Div Developer Edition.
    :target: docs/screenshot-1601068921.png
 
 
-
 aiscot receives AIS Sentences from an AIS Receiver, such as ais-decoder,
-converts them to Cursor-on-Target, and transmits the CoT to a UDP destination.
+converts them to Cursor-on-Target Events, and transmits the CoT Events to a destination.
 
-For use with CoT systems such as ATAK, WinTAK, RaptorX,
-Falconview, etc. See https://www.civtak.org/ for more information on the TAK
+For use with CoT systems such as ATAK, WinTAK, etc. See https://www.civtak.org/ for more information on the TAK
 program.
 
 Utilized for an open ocean boat race in the Northern Pacific Ocean, as
 described in this article: http://ampledata.org/boat_race_support.html
+
+Support AISCoT Development
+==========================
+
+AISCoT Software development is powered by coffee! Since we probably won't be able to meet in person any time soon, you
+can buy me a virtual coffee here:
+
+.. image:: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
+    :target: https://www.buymeacoffee.com/ampledata
+    :alt: Support AISCoT development: Buy me a coffee!
 
 Installation
 ============
@@ -57,37 +66,6 @@ forwards CoT messages to UDP 172.17.2.222:4242::
   $ aiscot -P 5050 -C 172.17.2.222:4242
 
 
-Example Cursor-on-Target Event
-==============================
-
-The `aiscot` daemon will output CoT XML Events similar to this example::
-
-    <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-    <event version="2.0" type="a-f-G-E-V-C" uid="AIS.993692014"
-        time="2020-09-25T14:15:01.639741Z" start="2020-09-25T14:15:01.639741Z"
-        stale="2020-09-25T15:15:01.639741Z" how="h-e">
-      <point lat="37.815" lon="-122.78695" hae="10" ce="10" le="10" />
-      <detail>
-        <uid Droid="6N                  @" />
-      </detail>
-    </event>
-
-
-
-Build Status
-============
-
-Master:
-
-.. image:: https://travis-ci.com/ampledata/aiscot.svg?branch=master
-    :target: https://travis-ci.com/ampledata/aiscot
-
-Develop:
-
-.. image:: https://travis-ci.com/ampledata/aiscot.svg?branch=develop
-    :target: https://travis-ci.com/ampledata/aiscot
-
-
 Source
 ======
 Github: https://github.com/ampledata/aiscot
@@ -100,18 +78,8 @@ http://ampledata.org/
 
 Copyright
 =========
-Copyright 2020 Orion Labs, Inc.
+Copyright 2021 Orion Labs, Inc.
 
 License
 =======
 Apache License, Version 2.0. See LICENSE for details.
-
-Debugging Cursor-on-Target
-==========================
-The publicly available ATAK source was a good reference for some of the parsing
-errors the ATAK-Civ Development Build was giving me, namely `Invalid CoT
-message received: Missing or invalid CoT event and/or point attributes`. Many
-errors are unfortunately caught in a single try/catch block:
-
-https://github.com/deptofdefense/AndroidTacticalAssaultKit-CIV/blob/6dc1941f45af3f9716e718dccebf42555a8c08fd/commoncommo/core/impl/cotmessage.cpp#L448
-

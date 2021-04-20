@@ -13,9 +13,9 @@ import sys
 import setuptools
 
 __title__ = 'aiscot'
-__version__ = '3.0.0'
+__version__ = '3.0.1'
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
-__copyright__ = 'Copyright 2020 Orion Labs, Inc.'
+__copyright__ = 'Copyright 2021 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
 
 
@@ -30,6 +30,15 @@ def publish():
 publish()
 
 
+def read_readme(readme_file="README.rst") -> str:
+    """Read the contents of the README file for use as a long_description."""
+    readme: str = ""
+    this_directory = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(this_directory, readme_file), encoding="utf-8") as f:
+        readme = f.read()
+    return readme
+
+
 setuptools.setup(
     version=__version__,
     name=__title__,
@@ -40,8 +49,9 @@ setuptools.setup(
     author='Greg Albrecht',
     author_email='oss@undef.net',
     package_data={'': ['LICENSE']},
-    license=open('LICENSE').read(),
-    long_description=open('README.rst').read(),
+    license="Apache License, Version 2.0",
+    long_description=read_readme(),
+    long_description_content_type="text/x-rst",
     zip_safe=False,
     include_package_data=True,
     install_requires=[

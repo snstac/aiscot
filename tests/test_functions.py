@@ -8,7 +8,7 @@ import unittest
 import aiscot.functions
 
 __author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
-__copyright__ = 'Copyright 2020 Orion Labs, Inc.'
+__copyright__ = 'Copyright 2021 Orion Labs, Inc.'
 __license__ = 'Apache License, Version 2.0'
 
 

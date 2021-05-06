@@ -41,7 +41,7 @@ async def main(opts):
         ais_port=opts.ais_port
     )
 
-    await tx_queue.put(aiscot.hello_event())
+    await tx_queue.put(pytak.hello_event())
 
     done, pending = await asyncio.wait(
         set([message_worker.run(), read_worker.run(), write_worker.run()]),

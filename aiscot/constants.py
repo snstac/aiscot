@@ -8,7 +8,7 @@ import os
 import re
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2020 Orion Labs, Inc."
+__copyright__ = "Copyright 2021 Orion Labs, Inc."
 __license__ = "Apache License, Version 2.0"
 
 
@@ -24,5 +24,5 @@ else:
         ('%(asctime)s aiscot %(levelname)s - %(message)s'))
 
 DEFAULT_AIS_PORT: int = 5050
-DEFAULT_STALE: int = 600
+DEFAULT_STALE: int = 3600  # 1 hour
 DEFAULT_TYPE: str = "a-n-S-X-M"

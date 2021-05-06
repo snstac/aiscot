@@ -4,17 +4,19 @@
 """AIS Cursor-on-Target Gateway Functions."""
 
 import datetime
+import xml
+import xml.etree.ElementTree
 
-import pycot
+import pytak
 
 import aiscot
 
-__author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
-__copyright__ = 'Copyright 2020 Orion Labs, Inc.'
-__license__ = 'Apache License, Version 2.0'
+__author__ = "Greg Albrecht W2GMD <oss@undef.net>"
+__copyright__ = "Copyright 2021 Orion Labs, Inc."
+__license__ = "Apache License, Version 2.0"
 
 
-def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> pycot.Event:
+def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> str:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event.
 
@@ -22,6 +24,7 @@ def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> pycot.Event:
     :type ais_sentence: `dict`
     """
     time = datetime.datetime.now(datetime.timezone.utc)
+
     cot_stale = cot_stale or aiscot.DEFAULT_STALE
     cot_type = aiscot.DEFAULT_TYPE
 
@@ -39,93 +42,57 @@ def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> pycot.Event:
     else:
         callsign = mmsi
 
-    point = pycot.Point()
-    point.lat = lat
-    point.lon = lon
-    point.ce = "9999999.0"
-    point.le = "9999999.0"
-    point.hae = "9999999.0"
+    point = xml.etree.ElementTree.Element("point")
+    point.set("lat", str(lat))
+    point.set("lon", str(lon))
+    point.set("hae", "9999999.0")
+    point.set("le", "9999999.0")
+    point.set("ce", "9999999.0")
 
-    uid = pycot.UID()
-    uid.Droid = name
+    uid = xml.etree.ElementTree.Element("UID")
+    uid.set("Droid", name)
 
-    contact = pycot.Contact()
-    contact.callsign = callsign
-    # Not supported by FTS 1.1 yet?
-    # contact.hostname = f'https://www.marinetraffic.com/en/ais/details/ships/mmsi:{mmsi}'
+    contact = xml.etree.ElementTree.Element("contact")
+    contact.set("callsign", str(callsign))
 
-    track = pycot.Track()
-    track.course = ais_sentence.get("true_heading", 0)
+    track = xml.etree.ElementTree.Element("track")
+    track.set("course", str(ais_sentence.get("true_heading", 0)))
 
     # Speed over ground: 0.1-knot (0.19 km/h) resolution from
     #                    0 to 102 knots (189 km/h)
     sog = int(ais_sentence.get("sog", 0))
     if sog:
-        track.speed = sog * 0.514444
+        track.set("speed", str(sog * 0.514444))
     else:
-        track.speed = "9999999.0"
+        track.set("speed", "9999999.0")
 
-    remarks = pycot.Remarks()
+    detail = xml.etree.ElementTree.Element("detail")
+    detail.set("uid", name)
+    detail.append(uid)
+    detail.append(contact)
+    detail.append(track)
+
+    remarks = xml.etree.ElementTree.Element("remarks")
     _remark = f"MMSI: {mmsi}"
     if _name:
-        remarks.value = f"Name: {_name} " + _remark
+        _remark = f"Name: {_name} {_remark}"
+        detail.set("remarks", _remark)
+        remarks.text = _remark
     else:
-        remarks.value = _remark
+        detail.set("remarks", _remark)
+        remarks.text = _remark
 
-    detail = pycot.Detail()
-    detail.uid = uid
-    detail.contact = contact
-    detail.track = track
-    # Not supported by FTS 1.1 yet?
-    # detail.remarks = remarks
+    detail.append(remarks)
 
-    event = pycot.Event()
-    event.version = "2.0"
-    event.event_type = cot_type
-    event.uid = name
-    event.time = time
-    event.start = time
-    event.stale = time + datetime.timedelta(seconds=cot_stale)  # 1 hour expire
-    event.how = "m-g"
-    event.point = point
-    event.detail = detail
+    root = xml.etree.ElementTree.Element("event")
+    root.set("version", "2.0")
+    root.set("type", cot_type)
+    root.set("uid", name)
+    root.set("how", "m-g")
+    root.set("time", time.strftime(pytak.ISO_8601_UTC))
+    root.set("start", time.strftime(pytak.ISO_8601_UTC))
+    root.set("stale", (time + datetime.timedelta(seconds=int(cot_stale))).strftime(pytak.ISO_8601_UTC))
+    root.append(point)
+    root.append(detail)
 
-    return event
-
-
-def hello_event():
-    time = datetime.datetime.now(datetime.timezone.utc)
-    name = 'aiscot'
-    callsign = 'aiscot'
-
-    point = pycot.Point()
-    point.lat = 0.0
-    point.lon = 0.0
-
-    # FIXME: These values are static, should be dynamic.
-    point.ce = '9999999.0'
-    point.le = '9999999.0'
-    point.hae = '9999999.0'
-
-    uid = pycot.UID()
-    uid.Droid = name
-
-    contact = pycot.Contact()
-    contact.callsign = callsign
-
-    detail = pycot.Detail()
-    detail.uid = uid
-    detail.contact = contact
-
-    event = pycot.Event()
-    event.version = '2.0'
-    event.event_type = 'a-u-G'
-    event.uid = name
-    event.time = time
-    event.start = time
-    event.stale = time + datetime.timedelta(hours=1)
-    event.how = 'h-g-i-g-o'
-    event.point = point
-    event.detail = detail
-
-    return event
+    return xml.etree.ElementTree.tostring(root)

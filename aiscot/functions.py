@@ -4,7 +4,7 @@
 """AIS Cursor-on-Target Gateway Functions."""
 
 import datetime
-import xml
+
 import xml.etree.ElementTree
 
 import pytak
@@ -22,6 +22,8 @@ def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> str:
 
     :param ais_sentence: AIS Sentence to convert to CoT.
     :type ais_sentence: `dict`
+    :param cot_stale: Number of Seconds from now to mark the CoT Event stale.
+    :type cot_stale: `int`
     """
     time = datetime.datetime.now(datetime.timezone.utc)
 

@@ -56,8 +56,7 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         'libais >= 0.16',
-        'pycot >= 2.5.0',
-        'pytak >= 3.0.0'
+        'pytak >= 3.5.0'
     ],
     classifiers=[
         'Programming Language :: Python',

@@ -59,23 +59,25 @@ Usage
 
 The `aiscot` daemon has several runtime arguments::
 
-    $ aiscot --help
-    usage: aiscot [-h] [-P AIS_PORT] -C COT_HOST
+    $ aiscot -h
+    usage: aiscot [-h] [-c CONFIG_FILE] [-d] [-U COT_URL] [-P AIS_PORT] [-S COT_STALE] [-F FILTER_CONFIG] [-K KNOWN_CRAFT]
 
     optional arguments:
       -h, --help            show this help message and exit
-      -P AIS_PORT, --ais_port AIS_PORT
-                            AIS UDP Port
-      -C COT_HOST, --cot_host COT_HOST
-                            Cursor-on-Target Host or Host:Port
+      -c CONFIG_FILE, --CONFIG_FILE CONFIG_FILE
+      -d, --DEBUG           Enable DEBUG logging
+      -U COT_URL, --COT_URL COT_URL
+                            URL to CoT Destination. Must be a URL, e.g. tcp:1.2.3.4:1234 or tls:...:1234, etc.
+      -P AIS_PORT, --AIS_PORT AIS_PORT
+                            AIS UDP Listen Port.
+      -S COT_STALE, --COT_STALE COT_STALE
+                            CoT Stale period, in seconds
+      -F FILTER_CONFIG, --FILTER_CONFIG FILTER_CONFIG
+                            FILTER_CONFIG
+      -K KNOWN_CRAFT, --KNOWN_CRAFT KNOWN_CRAFT
+                            KNOWN_CRAFT
 
-For minimum operation, `-P AIS_PORT` & `-C COT_HOST` are required.
-
-The following example listens for AIS Sentences on UDP 0.0.0.0:5050, and
-forwards CoT messages to UDP 172.17.2.222:4242::
-
-  $ aiscot -P 5050 -C 172.17.2.222:4242
-
+See example-config.ini for example configuration.
 
 Source
 ======

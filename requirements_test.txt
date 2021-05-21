@@ -1,11 +1,6 @@
-# Python Distribution Package Requirements for AIS to CoT Gateway.
-#
-# Source:: https://github.com/ampledata/aiscot
-# Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2020 Orion Labs, Inc.
-# License:: Apache License, Version 2.0
-
-
+twine
+pytest
+pytest-cov
 flake8
 pylint
-twine
+mypy

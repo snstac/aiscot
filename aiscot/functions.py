@@ -4,6 +4,7 @@
 """AIS Cursor-on-Target Gateway Functions."""
 
 import datetime
+import platform
 
 import xml.etree.ElementTree
 
@@ -16,37 +17,33 @@ __copyright__ = "Copyright 2021 Orion Labs, Inc."
 __license__ = "Apache License, Version 2.0"
 
 
-def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> str:
+
+def ais_to_cot_xml(ais_msg: dict, cot_stale: int = None) -> xml.etree.ElementTree.Element:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event.
 
-    :param ais_sentence: AIS Sentence to convert to CoT.
-    :type ais_sentence: `dict`
+    :param ais_msg: AIS Sentence to convert to CoT.
+    :type ais_msg: `dict`
     :param cot_stale: Number of Seconds from now to mark the CoT Event stale.
     :type cot_stale: `int`
     """
     time = datetime.datetime.now(datetime.timezone.utc)
 
-    cot_stale = cot_stale or aiscot.DEFAULT_STALE
-    cot_type = aiscot.DEFAULT_TYPE
+    cot_stale = cot_stale or aiscot.DEFAULT_COT_STALE
+    cot_type = aiscot.DEFAULT_COT_TYPE
 
-    lat = ais_sentence.get("y")
-    lon = ais_sentence.get("x")
-    mmsi = ais_sentence.get("mmsi")
-
-    if lat is None or lon is None or mmsi is None:
-        return None
+    mmsi = ais_msg.get("mmsi")
 
     name = f"MMSI-{mmsi}"
-    _name = ais_sentence.get("name", "").replace("@", "").strip()
+    _name = ais_msg.get("name", "").replace("@", "").strip()
     if _name:
         callsign = _name
     else:
         callsign = mmsi
 
     point = xml.etree.ElementTree.Element("point")
-    point.set("lat", str(lat))
-    point.set("lon", str(lon))
+    point.set("lat", str(ais_msg.get("lat")))
+    point.set("lon", str(ais_msg.get("lon")))
     point.set("hae", "9999999.0")
     point.set("le", "9999999.0")
     point.set("ce", "9999999.0")
@@ -58,11 +55,11 @@ def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> str:
     contact.set("callsign", str(callsign))
 
     track = xml.etree.ElementTree.Element("track")
-    track.set("course", str(ais_sentence.get("true_heading", 0)))
+    track.set("course", str(ais_msg.get("heading", 0)))
 
     # Speed over ground: 0.1-knot (0.19 km/h) resolution from
     #                    0 to 102 knots (189 km/h)
-    sog = int(ais_sentence.get("sog", 0))
+    sog = int(ais_msg.get("speed", 0))
     if sog:
         track.set("speed", str(sog * 0.514444))
     else:
@@ -77,10 +74,11 @@ def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> str:
     remarks = xml.etree.ElementTree.Element("remarks")
     _remark = f"MMSI: {mmsi}"
     if _name:
-        _remark = f"Name: {_name} {_remark}"
+        _remark = f"Name: {_name} {_remark} (via aiscot@{platform.node()})"
         detail.set("remarks", _remark)
         remarks.text = _remark
     else:
+        _remark = f"{_remark} (via aiscot@{platform.node()})"
         detail.set("remarks", _remark)
         remarks.text = _remark
 
@@ -97,4 +95,25 @@ def ais_to_cot(ais_sentence: dict, cot_stale: int = None) -> str:
     root.append(point)
     root.append(detail)
 
-    return xml.etree.ElementTree.tostring(root)
+    return root
+
+
+def ais_to_cot(ais_msg: dict, cot_stale: int = None) -> str:
+    """
+    Converts an AIS Sentence to a Cursor-on-Target Event as a Python `str` String.
+
+    See `ais_to_cot_xml()` for XML Object output version of this function.
+
+    :param ais_msg: AIS Sentence to convert to CoT.
+    :type ais_msg: `dict`
+    :param cot_stale: Number of Seconds from now to mark the CoT Event stale.
+    :type cot_stale: `int`
+    """
+    lat = ais_msg.get("lat")
+    lon = ais_msg.get("lon")
+    mmsi = ais_msg.get("mmsi")
+
+    if lat is None or lon is None or mmsi is None:
+        return None
+
+    return xml.etree.ElementTree.tostring(ais_to_cot_xml(locals()))

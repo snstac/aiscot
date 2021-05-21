@@ -7,10 +7,11 @@ import asyncio
 import io
 import logging
 
-import ais.stream
 import pytak
 
 import aiscot
+
+import aiscot.pyAISm
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
 __copyright__ = "Copyright 2021 Orion Labs, Inc."
@@ -39,19 +40,19 @@ class AISNetworkClient(asyncio.Protocol):
     def connection_made(self, transport):
         self.transport = transport
         self.address = transport.get_extra_info("peername")
-        self._logger.debug('Connection from %s', self.address)
+        self._logger.debug("Connection from %s", self.address)
         self.ready.set()
 
     def datagram_received(self, data, addr):
         self._logger.debug("Recieved from %s: '%s'", addr, data)
-        d_data = data.decode()
-        for msg in ais.stream.decode(io.StringIO(d_data), keep_nmea=True):
-            self._logger.debug("Received AIS: '%s'", msg)
+        d_data = data.decode().strip()
+        msg = aiscot.pyAISm.decod_ais(d_data)
+        self._logger.debug("Received AIS: '%s'", msg)
 
-            cot_event = aiscot.ais_to_cot(msg, cot_stale=self.cot_stale)
-            if cot_event is None:
-                return False
-            self.event_queue.put_nowait(cot_event)
+        cot_event = aiscot.ais_to_cot(msg, cot_stale=self.cot_stale)
+        if cot_event is None:
+            return False
+        self.event_queue.put_nowait(cot_event)
 
     def connection_lost(self, exc):
         self.ready.clear()
@@ -76,7 +77,7 @@ class AISWorker(pytak.MessageWorker):
         ready = asyncio.Event()
         trans, proto = await loop.create_datagram_endpoint(
             lambda: AISNetworkClient(ready, self.event_queue, self.cot_stale),
-            local_addr=('0.0.0.0', int(self.ais_port))
+            local_addr=("0.0.0.0", int(self.ais_port))
         )
 
         await ready.wait()

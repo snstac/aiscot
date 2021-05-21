@@ -20,9 +20,9 @@ else:
     from asyncio import _get_running_loop as get_running_loop
 
 
-__author__ = 'Greg Albrecht W2GMD <oss@undef.net>'
-__copyright__ = 'Copyright 2021 Orion Labs, Inc.'
-__license__ = 'Apache License, Version 2.0'
+__author__ = "Greg Albrecht W2GMD <oss@undef.net>"
+__copyright__ = "Copyright 2021 Orion Labs, Inc."
+__license__ = "Apache License, Version 2.0"
 
 
 async def main(opts):

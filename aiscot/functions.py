@@ -3,6 +3,7 @@
 
 """AIS Cursor-on-Target Gateway Functions."""
 
+import csv
 import datetime
 import platform
 
@@ -18,7 +19,8 @@ __license__ = "Apache License, Version 2.0"
 
 
 
-def ais_to_cot_xml(ais_msg: dict, cot_stale: int = None) -> xml.etree.ElementTree.Element:
+def ais_to_cot_xml(ais_msg: dict, stale: int = None, cot_type: str = "",
+                   known_craft: dict = {}) -> xml.etree.ElementTree.Element:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event.
 
@@ -29,13 +31,14 @@ def ais_to_cot_xml(ais_msg: dict, cot_stale: int = None) -> xml.etree.ElementTre
     """
     time = datetime.datetime.now(datetime.timezone.utc)
 
-    cot_stale = cot_stale or aiscot.DEFAULT_COT_STALE
-    cot_type = aiscot.DEFAULT_COT_TYPE
+    cot_stale = stale or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE
+    cot_type = known_craft.get("COT") or cot_type or aiscot.DEFAULT_COT_TYPE
 
     mmsi = ais_msg.get("mmsi")
+    ais_name = ais_msg.get("name", "").replace("@", "").strip()
 
     name = f"MMSI-{mmsi}"
-    _name = ais_msg.get("name", "").replace("@", "").strip()
+    _name = known_craft.get("NAME") or ais_name
     if _name:
         callsign = _name
     else:
@@ -49,7 +52,7 @@ def ais_to_cot_xml(ais_msg: dict, cot_stale: int = None) -> xml.etree.ElementTre
     point.set("ce", "9999999.0")
 
     uid = xml.etree.ElementTree.Element("UID")
-    uid.set("Droid", name)
+    uid.set("Droid", str(callsign))
 
     contact = xml.etree.ElementTree.Element("contact")
     contact.set("callsign", str(callsign))
@@ -73,8 +76,8 @@ def ais_to_cot_xml(ais_msg: dict, cot_stale: int = None) -> xml.etree.ElementTre
 
     remarks = xml.etree.ElementTree.Element("remarks")
     _remark = f"MMSI: {mmsi}"
-    if _name:
-        _remark = f"Name: {_name} {_remark} (via aiscot@{platform.node()})"
+    if ais_name:
+        _remark = f"AIS Name: {ais_name} {_remark} (via aiscot@{platform.node()})"
         detail.set("remarks", _remark)
         remarks.text = _remark
     else:
@@ -98,7 +101,7 @@ def ais_to_cot_xml(ais_msg: dict, cot_stale: int = None) -> xml.etree.ElementTre
     return root
 
 
-def ais_to_cot(ais_msg: dict, cot_stale: int = None) -> str:
+def ais_to_cot(ais_msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = {}) -> str:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event as a Python `str` String.
 
@@ -116,4 +119,14 @@ def ais_to_cot(ais_msg: dict, cot_stale: int = None) -> str:
     if lat is None or lon is None or mmsi is None:
         return None
 
-    return xml.etree.ElementTree.tostring(ais_to_cot_xml(locals()))
+    return xml.etree.ElementTree.tostring(ais_to_cot_xml(ais_msg, stale, cot_type, known_craft))
+
+
+def read_known_craft(csv_file: str) -> list:
+    """Reads the FILTER_CSV file into a `list`"""
+    all_rows = []
+    with open(csv_file) as csv_fd:
+        reader = csv.DictReader(csv_fd)
+        for row in reader:
+            all_rows.append(row)
+    return all_rows

@@ -19,8 +19,10 @@ described in this article: http://ampledata.org/boat_race_support.html
 Support AISCoT Development
 ==========================
 
-AISCoT Software development is powered by coffee! Since we probably won't be able to meet in person any time soon, you
-can buy me a virtual coffee here:
+AISCoT has been developed for the Disaster Response, Public Safety and Frontline community at-large. This software
+is currently provided at no-cost to our end-users. All development is self-funded and all time-spent is entirely
+voluntary. Any contribution you can make to further these software development efforts, and the mission of AISCoT
+to provide ongoing SA capabilities to our end-users, is greatly appreciated:
 
 .. image:: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
     :target: https://www.buymeacoffee.com/ampledata
@@ -29,18 +31,27 @@ can buy me a virtual coffee here:
 Installation
 ============
 
-The command-line daemon `aiscot` can be install from this source tree (A), or from
-the Python Package Index (PyPI) (B).
 
-A) To install from this source tree::
+The AIS to Cursor on Target Gateway is provided by a command-line tool
+called `aiscot`, which can be installed several ways.
 
-    $ git checkout https://github.com/ampledata/aiscot.git
-    $ cd aiscot/
-    $ python setup.py install
+Installing as a Debian/Ubuntu Package::
 
-B) To install from PyPI::
+    $ wget https://github.com/ampledata/pytak/releases/latest/download/python3-pytak_latest_all.deb
+    $ sudo apt install -f ./python3-pytak_latest_all.deb
+    $ wget https://github.com/ampledata/aiscot/releases/latest/download/python3-aiscot_latest_all.deb
+    $ sudo apt install -f ./python3-aiscot_latest_all.deb
+
+Install from the Python Package Index::
 
     $ pip install aiscot
+
+
+Install from this source tree::
+
+    $ git clone https://github.com/ampledata/aiscot.git
+    $ cd aiscot/
+    $ python setup.py aiscot
 
 
 Usage
@@ -78,8 +89,12 @@ http://ampledata.org/
 
 Copyright
 =========
-Copyright 2021 Orion Labs, Inc.
+
+* aiscot Copyright 2021 Orion Labs, Inc.
+* pyAISm.py Copyright 2016 Pierre Payen
 
 License
 =======
-Apache License, Version 2.0. See LICENSE for details.
+
+* aiscot is licensed under the Apache License, Version 2.0. See LICENSE for details.
+* pyAISm.py is licensed under the MIT License. See aiscot/pyAISm.py for details.

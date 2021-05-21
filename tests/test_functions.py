@@ -68,7 +68,21 @@ def sample_data_pyAISm():
     }
 
 
-def test_ais_to_cot(sample_data_pyAISm):
+@pytest.fixture
+def sample_known_craft():
+    sample_csv = """MMSI,NAME,COT,STALE
+366892000,TACO_01,a-f-S-T-A-C-O,
+"""
+    csv_fd = io.StringIO(sample_csv)
+    all_rows = []
+    reader = csv.DictReader(csv_fd)
+    for row in reader:
+        all_rows.append(row)
+    print(all_rows)
+    return all_rows
+
+
+def test_ais_to_cot_raw(sample_data_pyAISm):
     cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm)
     assert isinstance(cot, xml.etree.ElementTree.Element)
     assert cot.tag == "event"
@@ -85,6 +99,41 @@ def test_ais_to_cot(sample_data_pyAISm):
     detail = cot.findall("detail")
     assert detail[0].tag == "detail"
     assert detail[0].attrib["uid"] == "MMSI-366892000"
+
+    track = detail[0].findall("track")
+    assert track[0].attrib["course"] == "95"
+    assert track[0].attrib["speed"] == "32.924416"
+
+
+def test_ais_to_cot_raw_with_known_craft(sample_data_pyAISm, sample_known_craft):
+    known_craft_key = "MMSI"
+    filter_key = str(sample_data_pyAISm["mmsi"])
+
+    known_craft = (list(filter(
+        lambda x: x[known_craft_key].strip().upper() == filter_key, sample_known_craft)) or
+                   [{}])[0]
+
+    cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm, known_craft=known_craft)
+
+    assert isinstance(cot, xml.etree.ElementTree.Element)
+    assert cot.tag == "event"
+    assert cot.attrib["version"] == "2.0"
+    assert cot.attrib["type"] == "a-f-S-T-A-C-O"
+    assert cot.attrib["uid"] == "MMSI-366892000"
+
+    point = cot.findall("point")
+    assert point[0].tag == "point"
+    assert point[0].attrib["lat"] == "37.81691333333333"
+    assert point[0].attrib["lon"] == "-122.51208"
+    assert point[0].attrib["hae"] == "9999999.0"
+
+    detail = cot.findall("detail")
+    assert detail[0].tag == "detail"
+    assert detail[0].attrib["uid"] == "MMSI-366892000"
+
+    contact = detail[0].findall("contact")
+    assert contact[0].tag == "contact"
+    assert contact[0].attrib["callsign"] == "TACO_01"
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"

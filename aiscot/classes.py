@@ -3,10 +3,13 @@
 
 """AIS Cursor-on-Target Class Definitions."""
 
+import aiohttp
 import asyncio
 import configparser
 import io
 import logging
+import urllib
+import xml
 
 import pytak
 
@@ -54,7 +57,7 @@ class AISNetworkClient(asyncio.Protocol):
         d_data = data.decode().strip()
         msg = aiscot.pyAISm.decod_ais(d_data)
 
-        # self._logger.debug("Received AIS: '%s'", msg)
+        # self._logger.info("Received AIS: '%s'", msg)
 
         mmsi = str(msg.get("mmsi"))
 
@@ -62,7 +65,7 @@ class AISNetworkClient(asyncio.Protocol):
 
         if self.filter_type:
             if self.filter_type == "MMSI":
-                filter_key: str = mmsi
+                filter_key: str = str(mmsi)
             else:
                 filter_key: str = ""
 
@@ -85,7 +88,9 @@ class AISNetworkClient(asyncio.Protocol):
         if self.known_craft_db and not known_craft and not self.include_all_craft:
             return
 
-        event: str = aiscot.ais_to_cot(msg, stale=self.cot_stale, cot_type=self.cot_type, known_craft=known_craft)
+        event: str = aiscot.ais_to_cot(
+            msg, stale=self.cot_stale, cot_type=self.cot_type,
+            known_craft=known_craft)
 
         if event:
             self.event_queue.put_nowait(event)
@@ -128,23 +133,132 @@ class AISWorker(pytak.MessageWorker):
 
     """AIS Cursor-on-Target Class."""
 
-    def __init__(self, event_queue, opts) -> None:
+    def __init__(self, event_queue: asyncio.Queue, config) -> None:
         super().__init__(event_queue)
-        self.opts = opts
-        self.ais_port = int(opts.get("AIS_PORT") or aiscot.DEFAULT_AIS_PORT)
-        self.listen_host = opts.get("LISTEN_HOST") or "0.0.0.0"
+
+        self.config = config["aiscot"]
+
+        aishub_url = self.config.get("AISHUB_URL")
+        if aishub_url:
+            self.aishub_url: urllib.parse.ParseResult = urllib.parse.urlparse(
+                aishub_url)
+        else:
+            self.aishub_url = None
+
+        self.cot_stale = self.config.get("COT_STALE")
+        self.cot_type = self.config.get("COT_TYPE")
+        self.poll_interval: int = int(self.config.get("POLL_INTERVAL") or
+                                      aiscot.DEFAULT_POLL_INTERVAL)
+
+        self.include_all_craft = bool(self.config.get("INCLUDE_ALL_CRAFT")) or \
+                                 False
+
+        self.filters = self.config.get("FILTERS")
+        self.known_craft = self.config.get("KNOWN_CRAFT")
+        self.known_craft_key = self.config.get("KNOWN_CRAFT_KEY") or "MMSI"
+
+        self.filter_type = ""
+        self.known_craft_db = None
+
+        self.ais_port = int(self.config.get("AIS_PORT") or aiscot.DEFAULT_AIS_PORT)
+        self.listen_host = self.config.get("LISTEN_HOST") or "0.0.0.0"
+
+    async def handle_message(self, msgs) -> None:
+        # self._logger.info("Received AIS: '%s'", msg)
+
+        for msg in msgs:
+            mmsi = str(msg.get("MMSI"))
+
+            known_craft = {}
+
+            if self.filter_type:
+                if self.filter_type == "MMSI":
+                    filter_key: str = str(mmsi)
+                else:
+                    filter_key: str = ""
+
+                # self._logger.info("filter_key=%s", filter_key)
+
+                if self.known_craft_db and filter_key:
+                    known_craft = (list(filter(
+                        lambda x: x[self.known_craft_key].strip().upper() == filter_key, self.known_craft_db)) or
+                                   [{}])[0]
+                    # self._logger.debug("known_craft='%s'", known_craft)
+                elif filter_key:
+                    if "include" in self.filters[self.filter_type] and filter_key not in self.filters.get(filter_type,
+                                                                                                     "include"):
+                        return
+                    if "exclude" in self.filters[self.filter_type] and filter_key in self.filters.get(filter_type,
+                                                                                                 "exclude"):
+                        return
+
+            # If we're using a known_craft csv and this craft wasn't found, skip:
+            if self.known_craft_db and not known_craft and not self.include_all_craft:
+                return
+
+            event: xml.etree.ElementTree = aiscot.ais_to_cot_xml(
+                msg, stale=self.cot_stale, cot_type=self.cot_type,
+                known_craft=known_craft)
+
+            event_str: str = xml.etree.ElementTree.tostring(event)
+            await self._put_event_queue(event_str)
+
+    async def _get_aishub_feed(self):
+
+        feed_url: str = self.aishub_url.geturl()
+        self._logger.debug("Getting feed from %s", feed_url)
+        async with aiohttp.ClientSession() as session:
+            response = await session.request(
+                method="GET",
+                url=feed_url
+            )
+            response.raise_for_status()
+            json_resp = await response.json()
+
+            api_report = json_resp[0]
+            if api_report.get("ERROR"):
+                self._logger.error("AISHub.com API returned an error: ")
+                self._logger.error(api_report)
+            else:
+                ships = json_resp[1]
+                self._logger.debug("Retrieved %s ships", len(ships))
+                await self.handle_message(ships)
 
     async def run(self):
         """Runs this Thread, reads AIS & outputs CoT."""
         self._logger.info("Running AISWorker")
         loop = asyncio.get_event_loop()
 
-        ready = asyncio.Event()
-        trans, proto = await loop.create_datagram_endpoint(
-            lambda: AISNetworkClient(ready, self.event_queue, self.opts),
-            local_addr=(self.listen_host, self.ais_port)
-        )
+        if self.aishub_url:
+            if self.known_craft is not None:
+                self._logger.info("Using KNOWN_CRAFT File: '%s'",
+                                  self.known_craft)
+                self.known_craft_db = aiscot.read_known_craft(self.known_craft)
+                self.filters = configparser.ConfigParser()
+                self.filters.add_section(self.known_craft_key)
+                self.filters[self.known_craft_key]["include"] = \
+                    str([x[self.known_craft_key].strip().upper() for x in
+                         self.known_craft_db])
 
-        await ready.wait()
+            if self.filters or self.known_craft_db:
+                filter_src = self.filters or self.known_craft_key
+                self._logger.debug("filter_src=%s", filter_src)
+                if filter_src:
+                    if "MMSI" in filter_src:
+                        self.filter_type = "MMSI"
+                    self._logger.debug("filter_type=%s", self.filter_type)
+        else:
+            ready = asyncio.Event()
+            trans, proto = await loop.create_datagram_endpoint(
+                lambda: AISNetworkClient(ready, self.event_queue, self.config),
+                local_addr=(self.listen_host, self.ais_port)
+            )
+
+            await ready.wait()
+
         while 1:
-            await asyncio.sleep(0.01)
+            if self.aishub_url:
+                await self._get_aishub_feed()
+                await asyncio.sleep(self.poll_interval)
+            else:
+                await asyncio.sleep(0.01)

@@ -49,6 +49,10 @@ def sample_data_libais():
 
 @pytest.fixture
 def sample_data_pyAISm():
+    """
+    Provides a sample of pyAISm decoded AIS data.
+    :returns dict
+    """
     return {
         "type": 3,
         "repeat": 0,
@@ -65,6 +69,23 @@ def sample_data_pyAISm():
         "maneuver": 0,
         "raim": '0',
         "radio": 11729
+    }
+
+
+
+@pytest.fixture
+def sample_aton():
+    """
+    Provides a sample of pyAISm decoded AIS data.
+    :returns dict
+    """
+    return {
+        'type': 21, 'repeat': 0, 'mmsi': 993692016, 'aid_type': 1,
+        'name': '6W', 'accuracy': '0', 'lon': -122.804465,
+        'lat': 37.70583666666667, 'to_bow': 0, 'to_stern': 0, 'to_port': 0,
+        'to_starboard': 0, 'epfd': 7, 'second': 61, 'off_position': '0',
+        'regional': 0, 'raim': '0', 'virtual_aid': '1', 'assigned': '0',
+        'name_ext': ''
     }
 
 
@@ -87,7 +108,7 @@ def test_ais_to_cot_raw(sample_data_pyAISm):
     assert isinstance(cot, xml.etree.ElementTree.Element)
     assert cot.tag == "event"
     assert cot.attrib["version"] == "2.0"
-    assert cot.attrib["type"] == "a-n-S-X-M"
+    assert cot.attrib["type"] == "a-f-S-X-M"
     assert cot.attrib["uid"] == "MMSI-366892000"
 
     point = cot.findall("point")
@@ -138,3 +159,19 @@ def test_ais_to_cot_raw_with_known_craft(sample_data_pyAISm, sample_known_craft)
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
     assert track[0].attrib["speed"] == "32.924416"
+
+
+def test_get_mid(sample_data_pyAISm):
+    """
+    Tests that the git_mid function can return the country corresponding
+    to the MID in the given MMSI.
+    """
+    mmsi = sample_data_pyAISm.get('mmsi')
+    country = aiscot.get_mid(mmsi)
+    assert country == "United States of America"
+
+
+def test_get_aton(sample_aton):
+    mmsi = sample_aton.get('mmsi')
+    aton = aiscot.get_aton(mmsi)
+    assert aton == True

@@ -25,4 +25,5 @@ else:
 
 DEFAULT_AIS_PORT: int = 5050
 DEFAULT_COT_STALE: int = 3600  # 1 hour
-DEFAULT_COT_TYPE: str = "a-n-S-X-M"
+DEFAULT_COT_TYPE: str = "a-u-S-X-M"
+DEFAULT_POLL_INTERVAL: int = 61

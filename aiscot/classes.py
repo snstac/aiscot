@@ -185,10 +185,10 @@ class AISWorker(pytak.MessageWorker):
                                    [{}])[0]
                     # self._logger.debug("known_craft='%s'", known_craft)
                 elif filter_key:
-                    if "include" in self.filters[self.filter_type] and filter_key not in self.filters.get(filter_type,
+                    if "include" in self.filters[self.filter_type] and filter_key not in self.filters.get(self.filter_type,
                                                                                                      "include"):
                         return
-                    if "exclude" in self.filters[self.filter_type] and filter_key in self.filters.get(filter_type,
+                    if "exclude" in self.filters[self.filter_type] and filter_key in self.filters.get(self.filter_type,
                                                                                                  "exclude"):
                         return
 

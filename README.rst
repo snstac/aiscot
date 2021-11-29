@@ -92,7 +92,7 @@ http://ampledata.org/
 Copyright
 =========
 
-* aiscot Copyright 2021 Orion Labs, Inc.
+* aiscot Copyright 2021 Greg Albrecht, Inc.
 * pyAISm.py Copyright 2016 Pierre Payen
 
 License

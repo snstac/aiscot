@@ -9,7 +9,7 @@ AIS Cursor-on-Target Gateway.
 
 
 :author: Greg Albrecht W2GMD <oss@undef.net>
-:copyright: Copyright 2020 Orion Labs, Inc.
+:copyright: Copyright 2021 Greg Albrecht, Inc.
 :license: Apache License, Version 2.0
 :source: <https://github.com/ampledata/aiscot>
 
@@ -25,5 +25,5 @@ from .functions import (ais_to_cot, read_known_craft, get_mid, get_aton, # NOQA
 from .classes import AISWorker  # NOQA
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2021 Orion Labs, Inc."
+__copyright__ = "Copyright 2021 Greg Albrecht, Inc."
 __license__ = "Apache License, Version 2.0"

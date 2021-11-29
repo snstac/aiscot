@@ -2,7 +2,7 @@
 #
 # Source:: https://github.com/ampledata/aiscot
 # Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2020 Orion Labs, Inc.
+# Copyright:: Copyright 2021 Greg Albrecht, Inc.
 # License:: Apache License, Version 2.0
 #
 

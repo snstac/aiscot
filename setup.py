@@ -13,7 +13,7 @@ import sys
 import setuptools
 
 __title__ = "aiscot"
-__version__ = "4.0.0b2"
+__version__ = "4.0.0b3"
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
 __copyright__ = "Copyright 2021 Greg Albrecht, Inc."
 __license__ = "Apache License, Version 2.0"
@@ -55,7 +55,8 @@ setuptools.setup(
     zip_safe=False,
     include_package_data=True,
     install_requires=[
-        "pytak"
+        "pytak",
+        "aiohttp"
     ],
     classifiers=[
         "Programming Language :: Python",

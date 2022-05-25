@@ -62,3 +62,6 @@ pytest:
 	pytest
 
 test: install_editable install_test pytest
+
+test_cov:
+	pytest -cov=aiscot

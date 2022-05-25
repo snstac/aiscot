@@ -244,7 +244,7 @@ def get_mid(mmsi: str) -> str:
     ----------
     mmsi : `str`
         MMSI as decoded from AIS data.
-    
+
     Returns
     -------
     `str`

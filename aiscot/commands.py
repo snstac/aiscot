@@ -68,9 +68,13 @@ def cli():
     env_vars = os.environ
     env_vars["COT_URL"] = env_vars.get("COT_URL", aiscot.DEFAULT_COT_URL)
     config = configparser.ConfigParser(env_vars)
+    
     config_file = cli_args.get("CONFIG_FILE")
-    logging.info("Reading configuration from %s", config_file)
-    config.read(config_file)
+    if os.path.exists(config_file):
+        logging.info("Reading configuration from %s", config_file)
+        config.read(config_file)
+    else:
+        config.add_section("aiscot")
 
     if sys.version_info[:2] >= (3, 7):
         asyncio.run(main(config), debug=config["aiscot"].getboolean("DEBUG"))

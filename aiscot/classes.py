@@ -255,7 +255,7 @@ class AISWorker(pytak.MessageWorker):
 
     async def run(self, number_of_iterations=-1):
         """Runs this Thread, reads AIS & outputs CoT."""
-        self._logger.info("Running AISWorker")
+        self._logger.info("Running AISWorker, COT_URL=%s", self.config.get("COT_URL"))
         loop = asyncio.get_event_loop()
 
         if self.aishub_url:

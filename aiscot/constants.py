@@ -5,7 +5,7 @@
 
 import logging
 import os
-import re
+import pkg_resources
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
 __copyright__ = "Copyright 2021 Greg Albrecht"
@@ -29,8 +29,18 @@ DEFAULT_AIS_PORT: int = 5050
 DEFAULT_COT_STALE: int = 3600  # 1 hour
 DEFAULT_COT_TYPE: str = "a-u-S-X-M"
 DEFAULT_POLL_INTERVAL: int = 61
+
+pkg_resources.resource_stream(__name__, "data/emperors.csv")
 MID_DB_FILE = os.getenv(
     "MID_DB_FILE",
-    "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv",
+    pkg_resources.resource_filename(
+        __name__,
+        "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv",
+    ),
 )
-SHIP_DB_FILE = os.getenv("SHIP_DB_FILE", "yadd_mmsi_ship_2021-11-03-170131.txt")
+SHIP_DB_FILE = os.getenv(
+    "SHIP_DB_FILE",
+    pkg_resources.resource_filename(
+        __name__, "data/yadd_mmsi_ship_2021-11-03-170131.txt"
+    ),
+)

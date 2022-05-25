@@ -61,4 +61,5 @@ setuptools.setup(
     ],
     keywords=["Sailing", "AIS", "Cursor on Target", "ATAK", "TAK", "CoT"],
     entry_points={"console_scripts": ["aiscot = aiscot.commands:cli"]},
+    package_data={"": ["data/*"]},
 )

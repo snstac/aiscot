@@ -86,11 +86,11 @@ class AISNetworkClient(asyncio.Protocol):
             elif filter_key:
                 if "include" in self.filters[
                     self.filter_type
-                ] and filter_key not in self.filters.get(filter_type, "include"):
+                ] and filter_key not in self.filters.get(self.filter_type, "include"):
                     return
                 if "exclude" in self.filters[
                     self.filter_type
-                ] and filter_key in self.filters.get(filter_type, "exclude"):
+                ] and filter_key in self.filters.get(self.filter_type, "exclude"):
                     return
 
         # If we're using a known_craft csv and this craft wasn't found, skip:

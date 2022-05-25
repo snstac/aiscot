@@ -2,9 +2,9 @@ aiscot - AIS Cursor-on-Target Gateway.
 ****************************************
 **IF YOU HAVE AN URGENT OPERATIONAL NEED**: Email ops@undef.net or call/sms +1-415-598-8226
 
-.. image:: docs/screenshot-1601068921-25.png
+.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921-25.png
    :alt: Screenshot of AIS points in ATAK-Div Developer Edition.
-   :target: docs/screenshot-1601068921.png
+   :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
 
 
 aiscot receives AIS Sentences from an AIS Receiver, such as ais-decoder,

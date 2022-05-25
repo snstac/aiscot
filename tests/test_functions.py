@@ -108,15 +108,10 @@ def sample_known_craft():
 366892000,TACO_01,a-f-S-T-A-C-O,
 """
     csv_fd = io.StringIO(sample_csv)
-    all_rows = []
-    reader = csv.DictReader(csv_fd)
-    for row in reader:
-        all_rows.append(row)
-    print(all_rows)
-    return all_rows
+    return aiscot.functions._read_known_craft_fd(csv_fd)
 
 
-def test_ais_to_cot_raw(sample_data_pyAISm):
+def test_ais_to_cot_xml(sample_data_pyAISm):
     cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm)
     assert isinstance(cot, xml.etree.ElementTree.Element)
     assert cot.tag == "event"
@@ -139,7 +134,7 @@ def test_ais_to_cot_raw(sample_data_pyAISm):
     assert track[0].attrib["speed"] == "32.924416"
 
 
-def test_ais_to_cot_raw_with_known_craft(sample_data_pyAISm, sample_known_craft):
+def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft):
     known_craft_key = "MMSI"
     filter_key = str(sample_data_pyAISm["mmsi"])
 

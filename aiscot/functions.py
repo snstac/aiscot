@@ -18,8 +18,9 @@ __copyright__ = "Copyright 2022 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
+# pylint: disable=too-many-locals, too-many-branches, too-many-statements
 def ais_to_cot_xml(
-    msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = {}
+    msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = None
 ) -> ET.Element:
     """
     Converts an AIS Sentence to a Cursor-On-Target Event.
@@ -29,6 +30,7 @@ def ais_to_cot_xml(
     :param cot_stale: Number of Seconds from now to mark the COT Event stale.
     :type cot_stale: `int`
     """
+    known_craft = known_craft or {}
     time = datetime.datetime.now(datetime.timezone.utc)
 
     cot_stale = stale or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE
@@ -140,7 +142,7 @@ def ais_to_cot_xml(
 
 
 def ais_to_cot(
-    ais_msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = {}
+    ais_msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = None
 ) -> str:
     """
     Converts an AIS Sentence to a Cursor-on-Target Event as a Python `str` String.
@@ -162,13 +164,42 @@ def ais_to_cot(
     return ET.tostring(ais_to_cot_xml(ais_msg, stale, cot_type, known_craft))
 
 
+def _read_known_craft_fd(csv_fd) -> list:
+    """Reads known craft file into an iterable key=value array.
+
+    Parameters
+    ----------
+    csv_fd : `fd`
+        FD Object.
+
+    Returns
+    -------
+    `list`
+        Rows of `dict`s of CSV FD.
+    """
+    all_rows: list = []
+    reader = csv.DictReader(csv_fd)
+    for row in reader:
+        all_rows.append(row)
+    return all_rows
+
+
 def read_known_craft(csv_file: str) -> list:
-    """Reads the FILTER_CSV file into a `list`"""
+    """Reads Known Craft file into an iterable key=value array.
+
+    Parameters
+    ----------
+    csv_file : `str`
+        Path to the Known Craft CSV file.
+
+    Returns
+    -------
+    `list`
+        Rows of `dict`s of Known Crafts.
+    """
     all_rows: list = []
     with open(csv_file) as csv_fd:
-        reader = csv.DictReader(csv_fd)
-        for row in reader:
-            all_rows.append(row)
+        all_rows = _read_known_craft_fd(csv_fd)
     return all_rows
 
 
@@ -203,15 +234,25 @@ SHIP_DB = read_ship_db_file()
 
 def get_mid(mmsi: str) -> str:
     """
-    Gets the country for a given MMSI's MID.
+    Gets the registered country for a given vessel's MMSI MID.
 
-    :param mmsi: str MMSI as decoded from AIS data.
-    :return: str Country name in the MID Database from ITU.
+    Uses the ITU MID Database.
+
+    TK URL to ITU DB.
+
+    Parameters
+    ----------
+    mmsi : `str`
+        MMSI as decoded from AIS data.
+    
+    Returns
+    -------
+    `str`
+        Country name in the MID Database from ITU.
     """
     mid: str = str(mmsi)[:3]
     country: str = MID_DB.get(mid)
-    if country:
-        return country
+    return country
 
 
 def get_aton(mmsi: str) -> bool:
@@ -245,26 +286,45 @@ def get_sar(mmsi: str) -> bool:
     :param mmsi: str MMSI as decoded from AIS data.
     :return:
     """
+    sar = False
     _mmsi = str(mmsi)
     if _mmsi[:3] == "111":
-        return True
+        sar = True
     elif _mmsi[:5] in ["30386", "33885"]:  # US Coast Guard
-        return True
+        sar = True
+    return sar
 
 
 def get_crs(mmsi: str) -> bool:
+    """
+    Gets the CRS status of the vessel based on MMSI.
+
+    :param mmsi: MMSI of the vessel.
+    :type mmsi: str
+    :returns: True if CRS, False otherwise.
+    :rtype: bool
+    """
+    crs = False
+    # Known CRS':
     # 3669145
     # 3669708
     # 3669709
     if str(mmsi)[:4] == "3669" and len(str(mmsi)) == 7:
-        return True
+        crs = True
     elif str(mmsi)[:4] == "003369":
-        return True
-    else:
-        return False
+        crs = True
+    return crs
 
 
 def get_shipname(mmsi: str) -> str:
+    """
+    Gets the ship name from the SHIP_DB based on MMSI.
+
+    :param mmsi: MMSI of the ship.
+    :returns: Ship name.
+    """
+    ship_name: str = ""
     for ship in SHIP_DB:
         if str(ship.get("MMSI")) == str(mmsi):
-            return ship.get("name")
+            ship_name = ship.get("name")
+    return ship_name

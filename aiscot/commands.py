@@ -5,13 +5,12 @@
 
 import argparse
 import asyncio
-import collections
-import concurrent
 import configparser
 import logging
 import os
 import sys
-import urllib
+
+from urllib.parse import urlparse, ParseResult
 
 import pytak
 
@@ -21,7 +20,9 @@ import aiscot
 if sys.version_info[:2] >= (3, 7):
     from asyncio import get_running_loop
 else:
-    from asyncio import _get_running_loop as get_running_loop
+    from asyncio import (  # pylint: disable=no-name-in-module
+        _get_running_loop as get_running_loop,
+    )
 
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
@@ -30,12 +31,10 @@ __license__ = "Apache License, Version 2.0"
 
 
 async def main(config):
-    loop = get_running_loop()
+    """Main program function."""
     tx_queue: asyncio.Queue = asyncio.Queue()
     rx_queue: asyncio.Queue = asyncio.Queue()
-    cot_url: urllib.parse.ParseResult = urllib.parse.urlparse(
-        config["aiscot"].get("COT_URL")
-    )
+    cot_url: ParseResult = urlparse(config["aiscot"].get("COT_URL"))
 
     # Create our CoT Event Queue Worker
     reader, writer = await pytak.protocol_factory(cot_url)
@@ -46,7 +45,7 @@ async def main(config):
 
     await tx_queue.put(pytak.hello_event("aiscot"))
 
-    done, pending = await asyncio.wait(
+    done, _ = await asyncio.wait(
         set([message_worker.run(), read_worker.run(), write_worker.run()]),
         return_when=asyncio.FIRST_COMPLETED,
     )
@@ -65,8 +64,10 @@ def cli():
     namespace = parser.parse_args()
     cli_args = {k: v for k, v in vars(namespace).items() if v is not None}
 
-    # Read config file:
-    config = configparser.ConfigParser()
+    # Read config:
+    env_vars = os.environ
+    env_vars["COT_URL"] = env_vars.get("COT_URL", aiscot.DEFAULT_COT_URL)
+    config = configparser.ConfigParser(env_vars)
     config_file = cli_args.get("CONFIG_FILE")
     logging.info("Reading configuration from %s", config_file)
     config.read(config_file)
@@ -74,9 +75,9 @@ def cli():
     if sys.version_info[:2] >= (3, 7):
         asyncio.run(main(config), debug=config["aiscot"].getboolean("DEBUG"))
     else:
-        loop = asyncio.get_event_loop()
+        loop = get_running_loop()
         try:
-            loop.run_until_complete(main(combined_config))
+            loop.run_until_complete(main(config))
         finally:
             loop.close()
 

@@ -1,8 +1,8 @@
-# Makefile for Python AIS Cursor-on-Target Gateway.
+# AISCOT Makefile
 #
 # Source:: https://github.com/ampledata/aiscot
 # Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2021 Greg Albrecht, Inc.
+# Copyright:: Copyright 2022 Greg Albrecht
 # License:: Apache License, Version 2.0
 #
 
@@ -42,20 +42,20 @@ publish:
 	python setup.py publish
 
 pep8:
-	flake8 --max-complexity 12 --exit-zero aiscot/*.py
+	flake8 --max-line-length=88 --extend-ignore=E203 --exit-zero aiscot/*.py
 
 flake8: pep8
 
 lint:
 	pylint --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" \
-		-r n aiscot/*.py || exit 0
+		--max-line-length=88 -r n aiscot/*.py || exit 0
 
 pylint: lint
 
 checkmetadata:
 	python setup.py check -s --restructuredtext
 
-mypy:
+mypy:∂
 	mypy --strict .
 
 pytest:

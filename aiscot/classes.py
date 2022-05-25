@@ -3,14 +3,12 @@
 
 """AIS Cursor-On-Target Class Definitions."""
 
-import aiohttp
 import asyncio
 import configparser
-import io
 import logging
 import urllib
-import xml
 
+import aiohttp
 import pytak
 
 import aiscot
@@ -21,8 +19,10 @@ __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
 __copyright__ = "Copyright 2022 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
-
+# pylint: disable=too-many-instance-attributes
 class AISNetworkClient(asyncio.Protocol):
+
+    """Class for handling connections from network AIS feed."""
 
     _logger = logging.getLogger(__name__)
     if not _logger.handlers:
@@ -54,6 +54,7 @@ class AISNetworkClient(asyncio.Protocol):
         self.known_craft_db = None
 
     def handle_message(self, data) -> None:
+        """Handles incoming AIS data from network."""
         d_data = data.decode().strip()
         msg = aiscot.pyAISm.decod_ais(d_data)
 
@@ -105,6 +106,7 @@ class AISNetworkClient(asyncio.Protocol):
             self.event_queue.put_nowait(event)
 
     def connection_made(self, transport):
+        """Called when a network connection is made."""
         self.transport = transport
         self.address = transport.get_extra_info("peername")
         self._logger.debug("Connection from %s", self.address)
@@ -129,11 +131,13 @@ class AISNetworkClient(asyncio.Protocol):
         self.ready.set()
 
     def datagram_received(self, data, addr):
+        """Called when a UDP datagram is received."""
         self._logger.debug("Recieved from %s: '%s'", addr, data)
         for line in data.splitlines():
             self.handle_message(line)
 
     def connection_lost(self, exc):
+        """Called when a network connection is lost."""
         self.ready.clear()
         self._logger.exception(exc)
         self._logger.warning("Disconnected from %s", self.address)
@@ -175,6 +179,7 @@ class AISWorker(pytak.MessageWorker):
         self.listen_host = self.config.get("LISTEN_HOST") or "0.0.0.0"
 
     async def handle_message(self, msgs) -> None:
+        """Handles received MMSI data."""
         # self._logger.info("Received AIS: '%s'", msg)
 
         for msg in msgs:
@@ -218,20 +223,21 @@ class AISWorker(pytak.MessageWorker):
             if self.known_craft_db and not known_craft and not self.include_all_craft:
                 return
 
-            event: xml.etree.ElementTree = aiscot.ais_to_cot_xml(
+            event: str = aiscot.ais_to_cot(
                 msg,
                 stale=self.cot_stale,
                 cot_type=self.cot_type,
                 known_craft=known_craft,
             )
-
-            event_str: str = xml.etree.ElementTree.tostring(event)
-            await self._put_event_queue(event_str)
+            await self._put_event_queue(event)
 
     async def _get_aishub_feed(self):
-
+        """
+        Gets AIS data from AISHub feed.
+        """
         feed_url: str = self.aishub_url.geturl()
-        self._logger.debug("Getting feed from %s", feed_url)
+        self._logger.info("Getting feed from %s", feed_url)
+
         async with aiohttp.ClientSession() as session:
             response = await session.request(method="GET", url=feed_url)
             response.raise_for_status()
@@ -246,7 +252,7 @@ class AISWorker(pytak.MessageWorker):
                 self._logger.debug("Retrieved %s ships", len(ships))
                 await self.handle_message(ships)
 
-    async def run(self):
+    async def run(self, number_of_iterations=-1):
         """Runs this Thread, reads AIS & outputs CoT."""
         self._logger.info("Running AISWorker")
         loop = asyncio.get_event_loop()
@@ -273,7 +279,7 @@ class AISWorker(pytak.MessageWorker):
                     self._logger.debug("filter_type=%s", self.filter_type)
         else:
             ready = asyncio.Event()
-            trans, proto = await loop.create_datagram_endpoint(
+            await loop.create_datagram_endpoint(
                 lambda: AISNetworkClient(ready, self.event_queue, self.config),
                 local_addr=(self.listen_host, self.ais_port),
             )
@@ -283,6 +289,4 @@ class AISWorker(pytak.MessageWorker):
         while 1:
             if self.aishub_url:
                 await self._get_aishub_feed()
-                await asyncio.sleep(self.poll_interval)
-            else:
-                await asyncio.sleep(0.01)
+            await asyncio.sleep(self.poll_interval)

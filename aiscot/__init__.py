@@ -24,6 +24,7 @@ from .constants import (  # NOQA
     DEFAULT_POLL_INTERVAL,
     MID_DB_FILE,
     SHIP_DB_FILE,
+    DEFAULT_COT_URL,
 )
 
 from .functions import (  # NOQA

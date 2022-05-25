@@ -13,7 +13,7 @@ import sys
 import setuptools
 
 __title__ = "aiscot"
-__version__ = "4.0.0b4"
+__version__ = "4.0.0b5"
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
 __copyright__ = "Copyright 2022 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
@@ -48,7 +48,7 @@ setuptools.setup(
     description="AIS Cursor-On-Target Gateway.",
     author="Greg Albrecht",
     author_email="oss@undef.net",
-    package_data={"": ["LICENSE"]},
+    package_data={"": ["LICENSE", "data/*"]},
     license="Apache License, Version 2.0",
     long_description=read_readme(),
     long_description_content_type="text/x-rst",
@@ -61,5 +61,4 @@ setuptools.setup(
     ],
     keywords=["Sailing", "AIS", "Cursor on Target", "ATAK", "TAK", "CoT"],
     entry_points={"console_scripts": ["aiscot = aiscot.commands:cli"]},
-    package_data={"": ["data/*"]},
 )

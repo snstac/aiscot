@@ -24,26 +24,26 @@ __license__ = "Apache License, Version 2.0"
 @pytest.fixture
 def sample_data_libais():
     return {
-        'id': 1,
-        'repeat_indicator': 0,
-        'mmsi': 211433000,
-        'nav_status': 0,
-        'rot_over_range': True,
-        'rot': -731.386474609375,
-        'sog': 1.100000023841858,
-        'position_accuracy': 1,
-        'x': -122.65529333333333,
-        'y': 37.72890666666667,
-        'cog': 80.30000305175781,
-        'true_heading': 511,
-        'timestamp': 25,
-        'special_manoeuvre': 0,
-        'spare': 0,
-        'raim': True,
-        'sync_state': 0,
-        'slot_timeout': 3,
-        'received_stations': 133,
-        'nmea': '!AIVDM,1,1,,B,139`n:0P0;o>Qm@EUc838wvj2<25,0*4E\n'
+        "id": 1,
+        "repeat_indicator": 0,
+        "mmsi": 211433000,
+        "nav_status": 0,
+        "rot_over_range": True,
+        "rot": -731.386474609375,
+        "sog": 1.100000023841858,
+        "position_accuracy": 1,
+        "x": -122.65529333333333,
+        "y": 37.72890666666667,
+        "cog": 80.30000305175781,
+        "true_heading": 511,
+        "timestamp": 25,
+        "special_manoeuvre": 0,
+        "spare": 0,
+        "raim": True,
+        "sync_state": 0,
+        "slot_timeout": 3,
+        "received_stations": 133,
+        "nmea": "!AIVDM,1,1,,B,139`n:0P0;o>Qm@EUc838wvj2<25,0*4E\n",
     }
 
 
@@ -60,17 +60,16 @@ def sample_data_pyAISm():
         "status": 0,
         "turn": 0,
         "speed": 64,
-        "accuracy": '1',
+        "accuracy": "1",
         "lon": -122.51208,
         "lat": 37.81691333333333,
         "course": 97.10000000000001,
         "heading": 95,
         "second": 9,
         "maneuver": 0,
-        "raim": '0',
-        "radio": 11729
+        "raim": "0",
+        "radio": 11729,
     }
-
 
 
 @pytest.fixture
@@ -80,12 +79,26 @@ def sample_aton():
     :returns dict
     """
     return {
-        'type': 21, 'repeat': 0, 'mmsi': 993692016, 'aid_type': 1,
-        'name': '6W', 'accuracy': '0', 'lon': -122.804465,
-        'lat': 37.70583666666667, 'to_bow': 0, 'to_stern': 0, 'to_port': 0,
-        'to_starboard': 0, 'epfd': 7, 'second': 61, 'off_position': '0',
-        'regional': 0, 'raim': '0', 'virtual_aid': '1', 'assigned': '0',
-        'name_ext': ''
+        "type": 21,
+        "repeat": 0,
+        "mmsi": 993692016,
+        "aid_type": 1,
+        "name": "6W",
+        "accuracy": "0",
+        "lon": -122.804465,
+        "lat": 37.70583666666667,
+        "to_bow": 0,
+        "to_stern": 0,
+        "to_port": 0,
+        "to_starboard": 0,
+        "epfd": 7,
+        "second": 61,
+        "off_position": "0",
+        "regional": 0,
+        "raim": "0",
+        "virtual_aid": "1",
+        "assigned": "0",
+        "name_ext": "",
     }
 
 
@@ -130,9 +143,15 @@ def test_ais_to_cot_raw_with_known_craft(sample_data_pyAISm, sample_known_craft)
     known_craft_key = "MMSI"
     filter_key = str(sample_data_pyAISm["mmsi"])
 
-    known_craft = (list(filter(
-        lambda x: x[known_craft_key].strip().upper() == filter_key, sample_known_craft)) or
-                   [{}])[0]
+    known_craft = (
+        list(
+            filter(
+                lambda x: x[known_craft_key].strip().upper() == filter_key,
+                sample_known_craft,
+            )
+        )
+        or [{}]
+    )[0]
 
     cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm, known_craft=known_craft)
 
@@ -166,12 +185,12 @@ def test_get_mid(sample_data_pyAISm):
     Tests that the git_mid function can return the country corresponding
     to the MID in the given MMSI.
     """
-    mmsi = sample_data_pyAISm.get('mmsi')
+    mmsi = sample_data_pyAISm.get("mmsi")
     country = aiscot.get_mid(mmsi)
     assert country == "United States of America"
 
 
 def test_get_aton(sample_aton):
-    mmsi = sample_aton.get('mmsi')
+    mmsi = sample_aton.get("mmsi")
     aton = aiscot.get_aton(mmsi)
     assert aton == True

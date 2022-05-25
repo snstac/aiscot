@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""AIS Cursor-on-Target Class Definitions."""
+"""AIS Cursor-On-Target Class Definitions."""
 
 import aiohttp
 import asyncio
@@ -18,7 +18,7 @@ import aiscot
 import aiscot.pyAISm
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2021 Greg Albrecht, Inc."
+__copyright__ = "Copyright 2022 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
@@ -72,16 +72,25 @@ class AISNetworkClient(asyncio.Protocol):
             # self._logger.debug("filter_key=%s", filter_key)
 
             if self.known_craft_db and filter_key:
-                known_craft = (list(filter(
-                    lambda x: x[self.known_craft_key].strip().upper() == filter_key, self.known_craft_db)) or
-                               [{}])[0]
+                known_craft = (
+                    list(
+                        filter(
+                            lambda x: x[self.known_craft_key].strip().upper()
+                            == filter_key,
+                            self.known_craft_db,
+                        )
+                    )
+                    or [{}]
+                )[0]
                 # self._logger.debug("known_craft='%s'", known_craft)
             elif filter_key:
-                if "include" in self.filters[self.filter_type] and filter_key not in self.filters.get(filter_type,
-                                                                                                 "include"):
+                if "include" in self.filters[
+                    self.filter_type
+                ] and filter_key not in self.filters.get(filter_type, "include"):
                     return
-                if "exclude" in self.filters[self.filter_type] and filter_key in self.filters.get(filter_type,
-                                                                                             "exclude"):
+                if "exclude" in self.filters[
+                    self.filter_type
+                ] and filter_key in self.filters.get(filter_type, "exclude"):
                     return
 
         # If we're using a known_craft csv and this craft wasn't found, skip:
@@ -89,8 +98,8 @@ class AISNetworkClient(asyncio.Protocol):
             return
 
         event: str = aiscot.ais_to_cot(
-            msg, stale=self.cot_stale, cot_type=self.cot_type,
-            known_craft=known_craft)
+            msg, stale=self.cot_stale, cot_type=self.cot_type, known_craft=known_craft
+        )
 
         if event:
             self.event_queue.put_nowait(event)
@@ -105,8 +114,9 @@ class AISNetworkClient(asyncio.Protocol):
             self.known_craft_db = aiscot.read_known_craft(self.known_craft)
             self.filters = configparser.ConfigParser()
             self.filters.add_section(self.known_craft_key)
-            self.filters[self.known_craft_key]["include"] = \
-                str([x[self.known_craft_key].strip().upper() for x in self.known_craft_db])
+            self.filters[self.known_craft_key]["include"] = str(
+                [x[self.known_craft_key].strip().upper() for x in self.known_craft_db]
+            )
 
         if self.filters or self.known_craft_db:
             filter_src = self.filters or self.known_craft_key
@@ -141,17 +151,18 @@ class AISWorker(pytak.MessageWorker):
         aishub_url = self.config.get("AISHUB_URL")
         if aishub_url:
             self.aishub_url: urllib.parse.ParseResult = urllib.parse.urlparse(
-                aishub_url)
+                aishub_url
+            )
         else:
             self.aishub_url = None
 
         self.cot_stale = self.config.get("COT_STALE")
         self.cot_type = self.config.get("COT_TYPE")
-        self.poll_interval: int = int(self.config.get("POLL_INTERVAL") or
-                                      aiscot.DEFAULT_POLL_INTERVAL)
+        self.poll_interval: int = int(
+            self.config.get("POLL_INTERVAL") or aiscot.DEFAULT_POLL_INTERVAL
+        )
 
-        self.include_all_craft = bool(self.config.get("INCLUDE_ALL_CRAFT")) or \
-                                 False
+        self.include_all_craft = bool(self.config.get("INCLUDE_ALL_CRAFT")) or False
 
         self.filters = self.config.get("FILTERS")
         self.known_craft = self.config.get("KNOWN_CRAFT")
@@ -180,16 +191,27 @@ class AISWorker(pytak.MessageWorker):
                 # self._logger.info("filter_key=%s", filter_key)
 
                 if self.known_craft_db and filter_key:
-                    known_craft = (list(filter(
-                        lambda x: x[self.known_craft_key].strip().upper() == filter_key, self.known_craft_db)) or
-                                   [{}])[0]
+                    known_craft = (
+                        list(
+                            filter(
+                                lambda x: x[self.known_craft_key].strip().upper()
+                                == filter_key,
+                                self.known_craft_db,
+                            )
+                        )
+                        or [{}]
+                    )[0]
                     # self._logger.debug("known_craft='%s'", known_craft)
                 elif filter_key:
-                    if "include" in self.filters[self.filter_type] and filter_key not in self.filters.get(self.filter_type,
-                                                                                                     "include"):
+                    if "include" in self.filters[
+                        self.filter_type
+                    ] and filter_key not in self.filters.get(
+                        self.filter_type, "include"
+                    ):
                         return
-                    if "exclude" in self.filters[self.filter_type] and filter_key in self.filters.get(self.filter_type,
-                                                                                                 "exclude"):
+                    if "exclude" in self.filters[
+                        self.filter_type
+                    ] and filter_key in self.filters.get(self.filter_type, "exclude"):
                         return
 
             # If we're using a known_craft csv and this craft wasn't found, skip:
@@ -197,8 +219,11 @@ class AISWorker(pytak.MessageWorker):
                 return
 
             event: xml.etree.ElementTree = aiscot.ais_to_cot_xml(
-                msg, stale=self.cot_stale, cot_type=self.cot_type,
-                known_craft=known_craft)
+                msg,
+                stale=self.cot_stale,
+                cot_type=self.cot_type,
+                known_craft=known_craft,
+            )
 
             event_str: str = xml.etree.ElementTree.tostring(event)
             await self._put_event_queue(event_str)
@@ -208,10 +233,7 @@ class AISWorker(pytak.MessageWorker):
         feed_url: str = self.aishub_url.geturl()
         self._logger.debug("Getting feed from %s", feed_url)
         async with aiohttp.ClientSession() as session:
-            response = await session.request(
-                method="GET",
-                url=feed_url
-            )
+            response = await session.request(method="GET", url=feed_url)
             response.raise_for_status()
             json_resp = await response.json()
 
@@ -231,14 +253,16 @@ class AISWorker(pytak.MessageWorker):
 
         if self.aishub_url:
             if self.known_craft is not None:
-                self._logger.info("Using KNOWN_CRAFT File: '%s'",
-                                  self.known_craft)
+                self._logger.info("Using KNOWN_CRAFT File: '%s'", self.known_craft)
                 self.known_craft_db = aiscot.read_known_craft(self.known_craft)
                 self.filters = configparser.ConfigParser()
                 self.filters.add_section(self.known_craft_key)
-                self.filters[self.known_craft_key]["include"] = \
-                    str([x[self.known_craft_key].strip().upper() for x in
-                         self.known_craft_db])
+                self.filters[self.known_craft_key]["include"] = str(
+                    [
+                        x[self.known_craft_key].strip().upper()
+                        for x in self.known_craft_db
+                    ]
+                )
 
             if self.filters or self.known_craft_db:
                 filter_src = self.filters or self.known_craft_key
@@ -251,7 +275,7 @@ class AISWorker(pytak.MessageWorker):
             ready = asyncio.Event()
             trans, proto = await loop.create_datagram_endpoint(
                 lambda: AISNetworkClient(ready, self.event_queue, self.config),
-                local_addr=(self.listen_host, self.ais_port)
+                local_addr=(self.listen_host, self.ais_port),
             )
 
             await ready.wait()

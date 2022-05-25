@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""AIS Cursor-on-Target Gateway Commands."""
+"""AIS Cursor-On-Target Gateway Commands."""
 
 import argparse
 import asyncio
@@ -25,7 +25,7 @@ else:
 
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2021 Greg Albrecht, Inc."
+__copyright__ = "Copyright 2022 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
@@ -34,7 +34,8 @@ async def main(config):
     tx_queue: asyncio.Queue = asyncio.Queue()
     rx_queue: asyncio.Queue = asyncio.Queue()
     cot_url: urllib.parse.ParseResult = urllib.parse.urlparse(
-        config["aiscot"].get("COT_URL"))
+        config["aiscot"].get("COT_URL")
+    )
 
     # Create our CoT Event Queue Worker
     reader, writer = await pytak.protocol_factory(cot_url)
@@ -47,7 +48,8 @@ async def main(config):
 
     done, pending = await asyncio.wait(
         set([message_worker.run(), read_worker.run(), write_worker.run()]),
-        return_when=asyncio.FIRST_COMPLETED)
+        return_when=asyncio.FIRST_COMPLETED,
+    )
 
     for task in done:
         print(f"Task completed: {task}")
@@ -57,8 +59,9 @@ def cli():
     """Command Line interface for AIS Cursor-on-Target Gateway."""
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-c", "--CONFIG_FILE", dest="CONFIG_FILE",
-                        default="config.ini", type=str)
+    parser.add_argument(
+        "-c", "--CONFIG_FILE", dest="CONFIG_FILE", default="config.ini", type=str
+    )
     namespace = parser.parse_args()
     cli_args = {k: v for k, v in vars(namespace).items() if v is not None}
 

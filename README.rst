@@ -101,7 +101,7 @@ Configuration options:
     COT_TYPE : str, default: a-u-S-X-M
         Override COT Event Type ("marker type").
     AISHUB_URL : str, optional
-        AISHUB feed URL. Format: `https://data.aishub.net/ws.php?format=1&output=json&compress=0&username=AISHUB_USERNAME&latmin=BBOX_LAT_MIN&latmax=BBOX_LAT_MAX&lonmin=BBOX_LON_MON&lonmax=BBOX_LON_MAX`
+        AISHUB feed URL. See **AISHUB usage notes** in README below.
     KNOWN_CRAFT : str, optional
         Known Craft hints file. CSV file containing callsign/marker hints.
     INCLUDE_ALL_CRAFT : bool, optional
@@ -117,12 +117,11 @@ group & port: ``udp://239.2.3.1:6969``. You can specify other destinations by ei
 setting the ``COT_URL`` configuration option in the config INI, or by setting the ``COT_URL`` 
 environmental variable.
 
-Example ``COT_URL``s:
+Example ``COT_URL``:
 
 * ``tcp://172.17.2.100:4242`` : Send COT as TCP to host 172.17.2.100 on port 4242.
 
-* ``tls://192.168.2.1:8089`` : Send COT as TLS to host 192.168.2.1 on port 8089. Requires 
-setting additional environmental variables, see `PyTAK TLS documentation <https://github.com/ampledata/pytak#tls-support>`_.
+* ``tls://192.168.2.1:8089`` : Send COT as TLS to host 192.168.2.1 on port 8089. Requires setting additional environmental variables, see `PyTAK TLS documentation <https://github.com/ampledata/pytak#tls-support>`_.
 
 * ``udp://10.0.1.99:8087`` : Send COT as unicast UDP to host 10.0.1.99 on port 8087.
 
@@ -131,7 +130,14 @@ setting additional environmental variables, see `PyTAK TLS documentation <https:
 
 AISHUB.com requires registration. Once registered the site will provide you with a
 Username that you'll use with their feed. You'll also need to specify a Bounding Box 
-when accessing the feed. The Bounding Box is specified as follows:
+when accessing the feed. 
+
+The AISHUB_URL must be specified as follows:
+
+``https://data.aishub.net/ws.php?format=1&output=json&compress=0&username=AISHUB_USERNAME&latmin=BBOX_LAT_MIN&latmax=BBOX_LAT_MAX&lonmin=BBOX_LON_MON&lonmax=BBOX_LON_MAX``
+
+Replacing ``AISHUB_USERNAME`` with your AISHUB.com username, and specifying the 
+Bounding Box is specified as follows:
 
 latmin : signed float
     The minimum latitude of the Bounding Box (degrees from Equator) as a signed float 

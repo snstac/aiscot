@@ -11,20 +11,29 @@ AISCOT transforms AIS data to Cursor-On-Target for display on Situational Awaren
 applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
 for more information on the TAK program.
 
-AISCOT has two modes of operation:
+AISCOT Concepts of Operation
+============================
+
+AISCOT can operate in two different modes, as described in detail below:
+1. AIS Over-the-air
+2. AIS Aggregator
+
+## AIS Over-the-air
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_ota.png
    :alt: AISCOT "AIS Over the Air" Operation
 
-1. Over-the-air AIS: Receives AIS data from a VHF AIS receiver, such as the 
+Receive AIS data from a VHF AIS receiver, such as the 
 Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>`_. From there 
 AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>`_ and 
 forwarded to AISCOT to be transformed to COT and transmitted to COT destinations.
 
+## AIS Aggregator
+
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_agg.png
    :alt: AISCOT "AIS Aggregator" Operation
 
-2. AIS Aggregator feeds: Receives AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
+Receive AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
 Requires a subscription to AISHUB.
 
 

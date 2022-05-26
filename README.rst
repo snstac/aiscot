@@ -18,11 +18,11 @@ AISCOT Concept of Operation
 ===========================
 
 AISCOT can operate in two different modes, as described in detail below:
+
 1. AIS Over-the-air
 2. AIS Aggregator
 
-AIS Over-the-air Operation
-==========================
+**AIS Over-the-air Operation (RF)**
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_ota.png
    :alt: AISCOT "AIS Over the Air" Operation
@@ -32,8 +32,7 @@ Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>`_. From t
 AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>`_ and 
 forwarded to AISCOT to be transformed to COT and transmitted to COT destinations.
 
-AIS Aggregator Operation
-========================
+**AIS Aggregator Operation (AISHUB.com)**
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_agg.png
    :alt: AISCOT "AIS Aggregator" Operation
@@ -46,8 +45,7 @@ Support AISCOT Development
 
 AISCOT has been developed for the Disaster Response, Public Safety and 
 Frontline community at-large. This software is currently provided at no-cost to 
-our end-users. All development is self-funded and all time-spent is entirely
-voluntary. Any contribution you can make to further these software development 
+our end-users. Any contribution you can make to further these software development 
 efforts, and the mission of AISCOT to provide ongoing SA capabilities to our 
 end-users, is greatly appreciated:
 
@@ -55,12 +53,14 @@ end-users, is greatly appreciated:
     :target: https://www.buymeacoffee.com/ampledata
     :alt: Support AISCOT development: Buy me a coffee!
 
+
 Installation
 ============
 
-
 AISCOT functionality is provided by a command-line tool called `aiscot`, 
 which can be installed several ways.
+
+**AISCOT requires Python 3.6 or above.**
 
 Installing as a Debian/Ubuntu Package [Use Me!]::
 
@@ -71,13 +71,14 @@ Installing as a Debian/Ubuntu Package [Use Me!]::
 
 Install from the Python Package Index [Alternative]::
 
-    $ pip install aiscot
+    $ python3 -m pip install -U pytak
+    $ python3 -m pip install -U aiscot
 
 Install from this source tree [Developer]::
 
     $ git clone https://github.com/ampledata/aiscot.git
     $ cd aiscot/
-    $ python setup.py aiscot
+    $ python3 setup.py aiscot
 
 
 Usage
@@ -103,8 +104,30 @@ Configuration options:
         If using KNOWN_CRAFT, still include other craft not in our KNOWN_CRAFT list.
     COT_TYPE : `str`
         Override COT Event Type ("marker type"). Default `a-u-S-X-M`.
+    AISHUB_URL : `str`
+        AISHUB feed URL. Format: `https://data.aishub.net/ws.php?format=1&output=json&compress=0&username=AISHUB_USERNAME&latmin=BBOX_LAT_MIN&latmax=BBOX_LAT_MAX&lonmin=BBOX_LON_MON&lonmax=BBOX_LON_MAX`
 
 See example-config.ini in the source tree for example configuration.
+
+**AISHUB usage notes**
+
+AISHUB.com requires registration. Once registered the site will provide you with a
+Username that you'll use with their feed. You'll also need to specify a Bounding Box 
+when accessing the feed. The Bounding Box is specified as follows:
+
+latmin : signed `float` or `int`
+    The minimum latitude of the Bounding Box (degrees from Equator).
+latmax : signed `float` or `int`
+    The maximum latitude of the Bounding Box (degrees from Equator).
+lonmin : signed `float` or `int`
+    The minimum longitude of the Bound Box (degrees from Prime Meridian)
+lonmax : signed `float` or `int`
+    The maximum longitude of the Bound Box (degrees from Prime Meridian)
+
+For example, the following Bound Box paints a large swath around Northern California: 
+`latmin=35&latmax=38&lonmin=-124&lonmax=-121`. This can be read as: 
+"Between 35° and 38° latitude & -121° and -124° longitude".
+
 
 
 Example Setup

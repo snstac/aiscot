@@ -109,6 +109,24 @@ Configuration options:
 
 See example-config.ini in the source tree for example configuration.
 
+**COT destination notes**
+
+The `COT_URL` configuration option must be specified as a fully-qualified URL. By 
+default this tool will send COT to the default ATAK & WinTAK network multicast UDP 
+group & port: `udp://239.2.3.1:6969`. You can specify other destinations by either 
+setting the `COT_URL` configuration option in the config INI, or by setting the `COT_URL` 
+environmental variable.
+
+Example `COT_URL`s:
+
+* `tcp://172.17.2.100:4242` : Send COT as TCP to host 172.17.2.100 on port 4242.
+
+* `tls://192.168.2.1:8089` : Send COT as TLS to host 192.168.2.1 on port 8089. Requires 
+setting additional environmental variables, see `PyTAK TLS documentation <https://github.com/ampledata/pytak#tls-support>`_.
+
+* `udp://10.0.1.99:8087` : Send COT as unicast UDP to host 10.0.1.99 on port 8087.
+
+
 **AISHUB usage notes**
 
 AISHUB.com requires registration. Once registered the site will provide you with a

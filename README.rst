@@ -11,14 +11,18 @@ AISCOT transforms AIS data to Cursor-On-Target for display on Situational Awaren
 applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
 for more information on the TAK program.
 
-AISCOT Concepts of Operation
-============================
+AISCOT was original developed to support an open ocean boat race in the Northern 
+Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
+
+AISCOT Concept of Operation
+===========================
 
 AISCOT can operate in two different modes, as described in detail below:
 1. AIS Over-the-air
 2. AIS Aggregator
 
-## AIS Over-the-air
+AIS Over-the-air Operation
+==========================
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_ota.png
    :alt: AISCOT "AIS Over the Air" Operation
@@ -28,17 +32,14 @@ Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>`_. From t
 AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>`_ and 
 forwarded to AISCOT to be transformed to COT and transmitted to COT destinations.
 
-## AIS Aggregator
+AIS Aggregator Operation
+========================
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_agg.png
    :alt: AISCOT "AIS Aggregator" Operation
 
 Receive AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
 Requires a subscription to AISHUB.
-
-
-AISCOT was original developed to support an open ocean boat race in the Northern 
-Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
 
 Support AISCOT Development
 ==========================
@@ -104,6 +105,18 @@ Configuration options:
         Override COT Event Type ("marker type"). Default `a-u-S-X-M`.
 
 See example-config.ini in the source tree for example configuration.
+
+
+Example Setup
+=============
+
+The following diagram shows an example setup of AISCOT utilizing a dAISy+ AIS receiver 
+with an outboard Marine VHF antenna, a Raspberry Pi running aisdispatcher and AISCOT, 
+forwarding COT to a TAK Server and WinTAK & ATAK clients.
+
+
+.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_home.png
+   :alt: AISCOT Example setup
 
 
 Source

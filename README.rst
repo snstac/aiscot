@@ -14,11 +14,11 @@ for more information on the TAK program.
 AISCOT has two modes of operation:
 
 1. Over-the-air AIS: Receives AIS data from a VHF AIS receiver, such as the 
-Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>_`. From there 
-AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>_` and 
+Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>`_. From there 
+AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>`_ and 
 forwarded to AISCOT to be transformed to COT and transmitted to COT destinations.
 
-2. AIS Aggregator feeds: Receives AIS data from the `AISHUB <https://www.aishub.com>_` service. 
+2. AIS Aggregator feeds: Receives AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
 Requires a subscription to AISHUB.
 
 

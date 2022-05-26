@@ -1,21 +1,29 @@
 aiscot - AIS Cursor-on-Target Gateway.
 ****************************************
-**IF YOU HAVE AN URGENT OPERATIONAL NEED**: Email ops@undef.net or call/sms +1-415-598-8226
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921-25.png
    :alt: Screenshot of AIS points in ATAK-Div Developer Edition.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
 
+**IF YOU HAVE AN URGENT OPERATIONAL NEED**: Email: ops@undef.net or Signal: +1-415-598-8226
 
-aiscot receives AIS Sentences from an AIS Receiver, such as ais-decoder,
-converts them to Cursor-on-Target Events, and transmits the CoT Events to a 
-destination.
-
-For use with CoT systems such as ATAK, WinTAK, etc. See https://www.civtak.org/ 
+AISCOT transforms AIS data to Cursor-On-Target for display on Situational Awareness 
+applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
 for more information on the TAK program.
 
-Utilized for an open ocean boat race in the Northern Pacific Ocean, as
-described in this article: http://ampledata.org/boat_race_support.html
+AISCOT has two modes of operation:
+
+1. Over-the-air AIS: Receives AIS data from a VHF AIS receiver, such as the 
+Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>_`. From there 
+AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>_` and 
+forwarded to AISCOT to be transformed to COT and transmitted to COT destinations.
+
+2. AIS Aggregator feeds: Receives AIS data from the `AISHUB <https://www.aishub.com>_` service. 
+Requires a subscription to AISHUB.
+
+
+AISCOT was original developed to support an open ocean boat race in the Northern 
+Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
 
 Support AISCOT Development
 ==========================
@@ -38,7 +46,7 @@ Installation
 AISCOT functionality is provided by a command-line tool called `aiscot`, 
 which can be installed several ways.
 
-Installing as a Debian/Ubuntu Package [USE ME]::
+Installing as a Debian/Ubuntu Package [Use Me!]::
 
     $ wget https://github.com/ampledata/pytak/releases/latest/download/python3-pytak_latest_all.deb
     $ sudo apt install -f ./python3-pytak_latest_all.deb
@@ -64,17 +72,21 @@ environmental variables.
 
 Command-line options:
       -h, --help            show this help message and exit
-      -c CONFIG_FILE, --CONFIG_FILE CONFIG_FILE
+      -c CONFIG_FILE, --CONFIG_FILE     If specified, use this config file. Default 'config.ini'.
 
 Configuration options:
     COT_URL : `str`
-        URL to CoT Destination. Must be a URL, e.g. tcp:1.2.3.4:1234 or tls:...:1234, etc.
+        URL to COT destination. Must be a URL, e.g. `tcp://1.2.3.4:1234` or `tls://...:1234`, etc. Default `udp://239.2.3.1:6969`
     AIS_PORT : `int`
         AIS UDP Listen Port.
     COT_STALE : `int`
-        CoT Stale period, in seconds. Default 3600 seconds (1 hour).
+        CoT Stale period ("timeout"), in seconds. Default `3600` seconds (1 hour).
     KNOWN_CRAFT : `str`
         Known Craft hints file. CSV file containing callsign/marker hints.
+    INCLUDE_ALL_CRAFT : `bool`
+        If using KNOWN_CRAFT, still include other craft not in our KNOWN_CRAFT list.
+    COT_TYPE : `str`
+        Override COT Event Type ("marker type"). Default `a-u-S-X-M`.
 
 See example-config.ini in the source tree for example configuration.
 

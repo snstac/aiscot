@@ -92,39 +92,39 @@ Command-line options:
       -c CONFIG_FILE, --CONFIG_FILE     If specified, use this config file. Default 'config.ini'.
 
 Configuration options:
-    COT_URL : `str`
-        URL to COT destination. Must be a URL, e.g. `tcp://1.2.3.4:1234` or `tls://...:1234`, etc. Default `udp://239.2.3.1:6969`
-    AIS_PORT : `int`
+    COT_URL : str,  default: udp://239.2.3.1:6969
+        URL to COT destination. Must be a URL, e.g. ``tcp://1.2.3.4:1234`` or ``tls://...:1234``, etc.
+    AIS_PORT : int, default: 5050
         AIS UDP Listen Port.
-    COT_STALE : `int`
+    COT_STALE : int, default: 3600
         CoT Stale period ("timeout"), in seconds. Default `3600` seconds (1 hour).
-    KNOWN_CRAFT : `str`
-        Known Craft hints file. CSV file containing callsign/marker hints.
-    INCLUDE_ALL_CRAFT : `bool`
-        If using KNOWN_CRAFT, still include other craft not in our KNOWN_CRAFT list.
-    COT_TYPE : `str`
-        Override COT Event Type ("marker type"). Default `a-u-S-X-M`.
-    AISHUB_URL : `str`
+    COT_TYPE : str, default: a-u-S-X-M
+        Override COT Event Type ("marker type").
+    AISHUB_URL : str, optional
         AISHUB feed URL. Format: `https://data.aishub.net/ws.php?format=1&output=json&compress=0&username=AISHUB_USERNAME&latmin=BBOX_LAT_MIN&latmax=BBOX_LAT_MAX&lonmin=BBOX_LON_MON&lonmax=BBOX_LON_MAX`
+    KNOWN_CRAFT : str, optional
+        Known Craft hints file. CSV file containing callsign/marker hints.
+    INCLUDE_ALL_CRAFT : bool, optional
+        If using KNOWN_CRAFT, still include other craft not in our KNOWN_CRAFT list.
 
 See example-config.ini in the source tree for example configuration.
 
 **COT destination notes**
 
-The `COT_URL` configuration option must be specified as a fully-qualified URL. By 
+The ``COT_URL`` configuration option must be specified as a fully-qualified URL. By 
 default this tool will send COT to the default ATAK & WinTAK network multicast UDP 
-group & port: `udp://239.2.3.1:6969`. You can specify other destinations by either 
-setting the `COT_URL` configuration option in the config INI, or by setting the `COT_URL` 
+group & port: ``udp://239.2.3.1:6969``. You can specify other destinations by either 
+setting the ``COT_URL`` configuration option in the config INI, or by setting the ``COT_URL`` 
 environmental variable.
 
-Example `COT_URL`s:
+Example ``COT_URL``s:
 
-* `tcp://172.17.2.100:4242` : Send COT as TCP to host 172.17.2.100 on port 4242.
+* ``tcp://172.17.2.100:4242`` : Send COT as TCP to host 172.17.2.100 on port 4242.
 
-* `tls://192.168.2.1:8089` : Send COT as TLS to host 192.168.2.1 on port 8089. Requires 
+* ``tls://192.168.2.1:8089`` : Send COT as TLS to host 192.168.2.1 on port 8089. Requires 
 setting additional environmental variables, see `PyTAK TLS documentation <https://github.com/ampledata/pytak#tls-support>`_.
 
-* `udp://10.0.1.99:8087` : Send COT as unicast UDP to host 10.0.1.99 on port 8087.
+* ``udp://10.0.1.99:8087`` : Send COT as unicast UDP to host 10.0.1.99 on port 8087.
 
 
 **AISHUB usage notes**
@@ -133,17 +133,21 @@ AISHUB.com requires registration. Once registered the site will provide you with
 Username that you'll use with their feed. You'll also need to specify a Bounding Box 
 when accessing the feed. The Bounding Box is specified as follows:
 
-latmin : signed `float` or `int`
-    The minimum latitude of the Bounding Box (degrees from Equator).
-latmax : signed `float` or `int`
-    The maximum latitude of the Bounding Box (degrees from Equator).
-lonmin : signed `float` or `int`
-    The minimum longitude of the Bound Box (degrees from Prime Meridian)
-lonmax : signed `float` or `int`
-    The maximum longitude of the Bound Box (degrees from Prime Meridian)
+latmin : signed float
+    The minimum latitude of the Bounding Box (degrees from Equator) as a signed float 
+    (use negative sign for East: ``-``).
+latmax : signed float
+    The maximum latitude of the Bounding Box (degrees from Equator) as a signed float
+    (use negative sign for East: ``-``).
+lonmin : signed float
+    The minimum longitude of the Bound Box (degrees from Prime Meridian) as a signed float
+    (use negative sign for North: ``-``).
+lonmax : signed float
+    The maximum longitude of the Bound Box (degrees from Prime Meridian) as a signed float 
+    (use negative sign for North: ``-``).
 
 For example, the following Bound Box paints a large swath around Northern California: 
-`latmin=35&latmax=38&lonmin=-124&lonmax=-121`. This can be read as: 
+``latmin=35&latmax=38&lonmin=-124&lonmax=-121``. This can be read as: 
 "Between 35° and 38° latitude & -121° and -124° longitude".
 
 

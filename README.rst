@@ -2,7 +2,7 @@ aiscot - AIS Cursor-on-Target Gateway.
 ****************************************
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921-25.png
-   :alt: Screenshot of AIS points in ATAK-Div Developer Edition.
+   :alt: Screenshot of AIS as COT PLI in ATAK.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
 
 **IF YOU HAVE AN URGENT OPERATIONAL NEED**: Email: ops@undef.net or Signal: +1-415-598-8226
@@ -13,10 +13,16 @@ for more information on the TAK program.
 
 AISCOT has two modes of operation:
 
+.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_ota.png
+   :alt: AISCOT "AIS Over the Air" Operation
+
 1. Over-the-air AIS: Receives AIS data from a VHF AIS receiver, such as the 
 Megwatt `dAISy+ <https://shop.wegmatt.com/products/daisy-ais-receiver>`_. From there 
 AIS can be decoded by `AIS Dispatcher <https://www.aishub.net/ais-dispatcher>`_ and 
 forwarded to AISCOT to be transformed to COT and transmitted to COT destinations.
+
+.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_agg.png
+   :alt: AISCOT "AIS Aggregator" Operation
 
 2. AIS Aggregator feeds: Receives AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
 Requires a subscription to AISHUB.

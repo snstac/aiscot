@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""AIS Cursor-On-Target Gateway Functions."""
+"""AISCOT Functions."""
 
 import csv
-import datetime
-import platform
-
+import configparser
 import xml.etree.ElementTree as ET
 
-import pytak
+from typing import Union
 
+import pytak
 import aiscot
 
 __author__ = "Greg Albrecht W2GMD <oss@undef.net>"
@@ -18,65 +17,126 @@ __copyright__ = "Copyright 2022 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
+def create_tasks(
+    config: Union[dict, configparser.ConfigParser], clitool: pytak.CLITool
+) -> set:
+    """
+    Creates specific coroutine task set for this application.
+
+    Parameters
+    ----------
+    config : `dict`, `configparser.ConfigParser`
+        A `dict` of configuration parameters & values.
+    clitool : `pytak.CLITool`
+        A PyTAK Worker class instance.
+
+    Returns
+    -------
+    `set`
+        Set of PyTAK Worker classes for this application.
+    """
+    return set([aiscot.AISWorker(clitool.tx_queue, config)])
+
+
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 def ais_to_cot_xml(
-    msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = None
+    msg: dict, config: Union[dict, configparser.ConfigParser], known_craft: dict = None
 ) -> ET.Element:
     """
     Converts an AIS Sentence to a Cursor-On-Target Event.
 
-    :param msg: AIS Sentence to convert to COT.
-    :type msg: `dict`
-    :param cot_stale: Number of Seconds from now to mark the COT Event stale.
-    :type cot_stale: `int`
+    Parameters
+    ----------
+    msg : `dict`
+        AIS sentence serialized as a `dict`.
+    clitool : `pytak.CLITool`
+        A PyTAK Worker class instance.
+
+    Returns
+    -------
+    `xml.etree.ElementTree.Element`
+        Cursor-On-Target XML ElementTree object.
     """
     known_craft = known_craft or {}
-    time = datetime.datetime.now(datetime.timezone.utc)
+    remarks_fields = []
 
-    cot_stale = stale or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE
+    cot_stale = (
+        config.get("COT_STALE", None)
+        or known_craft.get("STALE")
+        or aiscot.DEFAULT_COT_STALE
+    )
+    cot_type = (
+        config.get("COT_TYPE", None)
+        or known_craft.get("COT")
+        or aiscot.DEFAULT_COT_TYPE
+    )
+    cot_host_id = config.get("COT_HOST_ID")
+
+    aiscotx = ET.Element("_aiscot_")
+    aiscotx.set("cot_host_id", cot_host_id)
 
     mmsi = msg.get("mmsi", msg.get("MMSI"))
-
     ais_name: str = msg.get("name", msg.get("NAME", "")).replace("@", "").strip()
     shipname: str = msg.get("shipname", aiscot.get_shipname(mmsi))
+    vessel_type: str = msg.get("type", msg.get("TYPE"))
+
+    if ais_name:
+        remarks_fields.append(f"AIS Name: {ais_name}")
+        aiscotx.set("ais_name", ais_name)
 
     if shipname:
         ais_name = shipname
+        remarks_fields.append(f"Shipname: {shipname}")
+        aiscotx.set("shipname", shipname)
 
-    name = f"MMSI-{mmsi}"
+    uid = f"MMSI-{mmsi}"
+
     _name = known_craft.get("NAME") or ais_name
     if _name:
         callsign = _name
     else:
         callsign = mmsi
 
-    if known_craft.get("NAME"):
-        print(f"NAME = {_name} MMSI = {mmsi}")
-
-    cot_type = known_craft.get("COT") or cot_type or aiscot.DEFAULT_COT_TYPE
-
     country: str = aiscot.get_mid(mmsi)
-    if country and "United States of America" in country:
-        cot_type = "a-f" + cot_type[3:]
-    elif country:
+    if country:
         cot_type = "a-n" + cot_type[3:]
+        remarks_fields.append(f"Country: {country}")
+        aiscotx.set("country", country)
+        if "United States of America" in country:
+            cot_type = "a-f" + cot_type[3:]
+
+    if vessel_type:
+        ais_name = shipname
+        remarks_fields.append(f"Type: {vessel_type}")
+        aiscotx.set("type", str(vessel_type))
+
+    if mmsi:
+        remarks_fields.append(f"MMSI: {mmsi}")
+        aiscotx.set("mmsi", str(mmsi))
 
     aton: bool = aiscot.get_aton(mmsi)
+    aiscotx.set("aton", str(aton))
     if aton:
         cot_type = "a-n-S-N"
         cot_stale = 86400  # 1 Day
         callsign = f"AtoN {callsign}"
+        remarks_fields.append(f"AtoN: {aton}")
 
     uscg: bool = aiscot.get_sar(mmsi)
+    aiscotx.set("uscg", str(uscg))
     if uscg:
         cot_type = "a-f-S-X-L"
+        remarks_fields.append(f"USCG: {uscg}")
 
     crs: bool = aiscot.get_crs(mmsi)
+    aiscotx.set("crs", str(crs))
     if crs:
         cot_type = "a-f-G-I-U-T"
         cot_stale = 86400  # 1 Day
         callsign = f"USCG CRS {callsign}"
+        remarks_fields.append(f"USCG CRS: {crs}")
 
+    # Point
     point = ET.Element("point")
     point.set("lat", str(msg.get("lat", msg.get("LATITUDE"))))
     point.set("lon", str(msg.get("lon", msg.get("LONGITUDE"))))
@@ -84,9 +144,7 @@ def ais_to_cot_xml(
     point.set("le", "9999999.0")
     point.set("ce", "9999999.0")
 
-    contact = ET.Element("contact")
-    contact.set("callsign", str(callsign))
-
+    # Track
     track = ET.Element("track")
     track.set("course", str(msg.get("heading", msg.get("HEADING", 0))))
 
@@ -98,70 +156,53 @@ def ais_to_cot_xml(
     else:
         track.set("speed", "9999999.0")
 
-    detail = ET.Element("detail")
-    detail.set("uid", name)
-    detail.append(contact)
-    detail.append(track)
+    # Contact
+    contact = ET.Element("contact")
+    contact.set("callsign", str(callsign))
 
     remarks = ET.Element("remarks")
+    remarks_fields.append(f"{cot_host_id}")
+    _remarks = " ".join(list(filter(None, remarks_fields)))
+    remarks.text = _remarks
 
-    if crs:
-        remark = f"USCG CRS {mmsi}"
-        if ais_name:
-            remark = f"USCG CRS {ais_name} {mmsi}"
-    else:
-        _remark = f"AtoN/{aton} MMSI/{mmsi} Co/{country}"
-        if ais_name:
-            remark = f"{ais_name} {_remark}"
-        else:
-            remark = _remark
-
-    _remarks = f"{remark} Ty/{msg.get('type', msg.get('TYPE'))} Sn/{shipname}"
-    remarks.text = f"{_remarks} aiscot@{platform.node()}"
+    detail = ET.Element("detail")
+    detail.set("uid", uid)
+    detail.append(track)
+    detail.append(contact)
     detail.append(remarks)
 
     root = ET.Element("event")
-
     root.set("version", "2.0")
     root.set("type", cot_type)
-    root.set("uid", name)
+    root.set("uid", uid)
     root.set("how", "m-g")
-    root.set("time", time.strftime(pytak.ISO_8601_UTC))
-    root.set("start", time.strftime(pytak.ISO_8601_UTC))
-    root.set(
-        "stale",
-        (time + datetime.timedelta(seconds=int(cot_stale))).strftime(
-            pytak.ISO_8601_UTC
-        ),
-    )
+    root.set("time", pytak.cot_time())
+    root.set("start", pytak.cot_time())
+    root.set("stale", pytak.cot_time(cot_stale))
 
     root.append(point)
     root.append(detail)
+    root.append(aiscotx)
 
     return root
 
 
 def ais_to_cot(
-    ais_msg: dict, stale: int = None, cot_type: str = "", known_craft: dict = None
-) -> str:
-    """
-    Converts an AIS Sentence to a Cursor-on-Target Event as a Python `str` String.
-
-    See `ais_to_cot_xml()` for XML Object output version of this function.
-
-    :param ais_msg: AIS Sentence to convert to CoT.
-    :type ais_msg: `dict`
-    :param cot_stale: Number of Seconds from now to mark the CoT Event stale.
-    :type cot_stale: `int`
-    """
-    lat = ais_msg.get("lat")
-    lon = ais_msg.get("lon")
-    mmsi = ais_msg.get("mmsi")
+    msg: dict, config: Union[dict, configparser.ConfigParser], known_craft: dict = None
+) -> bytes:
+    """Wrapper for `ais_to_cot_xml` that returns COT as an XML string."""
+    lat = msg.get("lat")
+    lon = msg.get("lon")
+    mmsi = msg.get("mmsi")
 
     if lat is None or lon is None or mmsi is None:
         return None
 
-    return ET.tostring(ais_to_cot_xml(ais_msg, stale, cot_type, known_craft))
+    cot: ET.ElementTree = ais_to_cot_xml(msg, config, known_craft)
+    if cot:
+        return ET.tostring(cot)
+
+    return None
 
 
 def _read_known_craft_fd(csv_fd) -> list:
@@ -169,12 +210,12 @@ def _read_known_craft_fd(csv_fd) -> list:
 
     Parameters
     ----------
-    csv_fd : `fd`
+    csv_fd : fd
         FD Object.
 
     Returns
     -------
-    `list`
+    list
         Rows of `dict`s of CSV FD.
     """
     all_rows: list = []
@@ -203,7 +244,7 @@ def read_known_craft(csv_file: str) -> list:
     return all_rows
 
 
-def read_mid_db_file(csv_file: str = aiscot.MID_DB_FILE) -> list:
+def read_mid_db_file(csv_file: str = aiscot.DEFAULT_MID_DB_FILE) -> list:
     """Reads the MID_DB_FILE file into a `dict`"""
     mid_digits: list = []
     mid_allocated_to: list = []
@@ -217,7 +258,7 @@ def read_mid_db_file(csv_file: str = aiscot.MID_DB_FILE) -> list:
     return dict(zip(mid_digits, mid_allocated_to))
 
 
-def read_ship_db_file(csv_file: str = aiscot.SHIP_DB_FILE) -> list:
+def read_ship_db_file(csv_file: str = aiscot.DEFAULT_SHIP_DB_FILE) -> list:
     """Reads the SHIP_DB_FILE file into a `list`"""
     all_rows: list = []
     fields: list = ["MMSI", "name", "unk", "vtype"]

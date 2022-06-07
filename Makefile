@@ -18,7 +18,7 @@ install_requirements:
 develop:
 	python setup.py develop
 
-install_editable:
+editable:
 	pip install -e .
 
 install_test:
@@ -55,7 +55,7 @@ pylint: lint
 checkmetadata:
 	python setup.py check -s --restructuredtext
 
-mypy:∂
+mypy:
 	mypy --strict .
 
 pytest:

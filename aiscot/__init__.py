@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# AIS Cursor-On-Target Gateway.
+# AISCOT: AIS Cursor-On-Target Gateway.
 
 """
-AIS Cursor-On-Target Gateway.
+AISCOT: AIS Cursor-On-Target Gateway.
 ~~~~
 
 
@@ -18,13 +18,13 @@ AIS Cursor-On-Target Gateway.
 from .constants import (  # NOQA
     LOG_FORMAT,
     LOG_LEVEL,
-    DEFAULT_AIS_PORT,
+    DEFAULT_LISTEN_PORT,
+    DEFAULT_LISTEN_HOST,
     DEFAULT_COT_TYPE,
     DEFAULT_COT_STALE,
     DEFAULT_POLL_INTERVAL,
-    MID_DB_FILE,
-    SHIP_DB_FILE,
-    DEFAULT_COT_URL,
+    DEFAULT_MID_DB_FILE,
+    DEFAULT_SHIP_DB_FILE,
 )
 
 from .functions import (  # NOQA
@@ -36,6 +36,7 @@ from .functions import (  # NOQA
     get_crs,
     get_shipname,
     ais_to_cot_xml,
+    create_tasks,
 )
 
 from .classes import AISWorker  # NOQA

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""AIS Cursor-On-Target Constants."""
+"""AISCOT Constants."""
 
 import logging
 import os
@@ -25,20 +25,23 @@ else:
     LOG_LEVEL = logging.INFO
     LOG_FORMAT = logging.Formatter(("%(asctime)s aiscot %(levelname)s - %(message)s"))
 
-DEFAULT_AIS_PORT: int = 5050
-DEFAULT_COT_STALE: int = 3600  # 1 hour
-DEFAULT_COT_TYPE: str = "a-u-S-X-M"
-DEFAULT_POLL_INTERVAL: int = 61
-DEFAULT_COT_URL: str = "udp://239.2.3.1:6969"  # ATAK Default multicast
 
-MID_DB_FILE = os.getenv(
+DEFAULT_LISTEN_PORT: int = 5050
+DEFAULT_LISTEN_HOST: str = "0.0.0.0"
+
+DEFAULT_COT_STALE: str = "3600"  # 1 hour
+DEFAULT_COT_TYPE: str = "a-u-S-X-M"
+
+DEFAULT_POLL_INTERVAL: int = 61
+
+DEFAULT_MID_DB_FILE = os.getenv(
     "MID_DB_FILE",
     pkg_resources.resource_filename(
         __name__,
         "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv",
     ),
 )
-SHIP_DB_FILE = os.getenv(
+DEFAULT_SHIP_DB_FILE = os.getenv(
     "SHIP_DB_FILE",
     pkg_resources.resource_filename(
         __name__, "data/yadd_mmsi_ship_2021-11-03-170131.txt"

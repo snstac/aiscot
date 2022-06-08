@@ -1,18 +1,32 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Copyright 2022 Greg Albrecht <oss@undef.net>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author:: Greg Albrecht W2GMD <oss@undef.net>
+# Copyright:: Copyright 2022 Greg Albrecht
+# License:: Apache License, Version 2.0
+#
 
-"""AIS Cursor-on-Target Gateway Function Tests."""
+"""AISCOT Function Tests."""
 
-import asyncio
-import csv
 import io
-import urllib
-import xml.etree.ElementTree
+import xml.etree.ElementTree as ET
 
 import pytest
-
 import aiscot
-
 import aiscot.functions
 
 
@@ -113,7 +127,7 @@ def sample_known_craft():
 
 def test_ais_to_cot_xml(sample_data_pyAISm):
     cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm)
-    assert isinstance(cot, xml.etree.ElementTree.Element)
+    assert isinstance(cot, ET.Element)
     assert cot.tag == "event"
     assert cot.attrib["version"] == "2.0"
     assert cot.attrib["type"] == "a-f-S-X-M"
@@ -131,7 +145,7 @@ def test_ais_to_cot_xml(sample_data_pyAISm):
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
-    assert track[0].attrib["speed"] == "32.924416"
+    assert track[0].attrib["speed"] == "3.292181069958848"
 
 
 def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft):
@@ -150,7 +164,7 @@ def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft)
 
     cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm, known_craft=known_craft)
 
-    assert isinstance(cot, xml.etree.ElementTree.Element)
+    assert isinstance(cot, ET.Element)
     assert cot.tag == "event"
     assert cot.attrib["version"] == "2.0"
     assert cot.attrib["type"] == "a-f-S-T-A-C-O"
@@ -172,7 +186,7 @@ def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft)
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
-    assert track[0].attrib["speed"] == "32.924416"
+    assert track[0].attrib["speed"] == "3.292181069958848"
 
 
 def test_get_mid(sample_data_pyAISm):

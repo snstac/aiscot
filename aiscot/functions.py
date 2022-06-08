@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#
+# Copyright 2022 Greg Albrecht <oss@undef.net>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Author:: Greg Albrecht W2GMD <oss@undef.net>
+# Copyright:: Copyright 2022 Greg Albrecht
+# License:: Apache License, Version 2.0
+#
 
 """AISCOT Functions."""
 
@@ -40,7 +59,7 @@ def create_tasks(
 
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 def ais_to_cot_xml(
-    msg: dict, config: Union[dict, configparser.ConfigParser], known_craft: dict = None
+    craft: dict, config: Union[dict, None] = None, known_craft: Union[dict, None] = None
 ) -> ET.Element:
     """
     Converts an AIS Sentence to a Cursor-On-Target Event.
@@ -57,8 +76,16 @@ def ais_to_cot_xml(
     `xml.etree.ElementTree.Element`
         Cursor-On-Target XML ElementTree object.
     """
+    lat = craft.get("lat", craft.get("LATITUDE"))
+    lon = craft.get("lon", craft.get("LONGITUDE"))
+    mmsi = craft.get("mmsi", craft.get("MMSI"))
+
+    if lat is None or lon is None or mmsi is None:
+        return None
+
     known_craft = known_craft or {}
     remarks_fields = []
+    config: dict = config or {}
 
     cot_stale = (
         config.get("COT_STALE", None)
@@ -75,10 +102,9 @@ def ais_to_cot_xml(
     aiscotx = ET.Element("_aiscot_")
     aiscotx.set("cot_host_id", cot_host_id)
 
-    mmsi = msg.get("mmsi", msg.get("MMSI"))
-    ais_name: str = msg.get("name", msg.get("NAME", "")).replace("@", "").strip()
-    shipname: str = msg.get("shipname", aiscot.get_shipname(mmsi))
-    vessel_type: str = msg.get("type", msg.get("TYPE"))
+    ais_name: str = craft.get("name", craft.get("NAME", "")).replace("@", "").strip()
+    shipname: str = craft.get("shipname", aiscot.get_shipname(mmsi))
+    vessel_type: str = craft.get("type", craft.get("TYPE"))
 
     if ais_name:
         remarks_fields.append(f"AIS Name: {ais_name}")
@@ -138,23 +164,26 @@ def ais_to_cot_xml(
 
     # Point
     point = ET.Element("point")
-    point.set("lat", str(msg.get("lat", msg.get("LATITUDE"))))
-    point.set("lon", str(msg.get("lon", msg.get("LONGITUDE"))))
+    point.set("lat", str(lat))
+    point.set("lon", str(lon))
     point.set("hae", "9999999.0")
     point.set("le", "9999999.0")
     point.set("ce", "9999999.0")
 
     # Track
     track = ET.Element("track")
-    track.set("course", str(msg.get("heading", msg.get("HEADING", 0))))
+    heading: float = craft.get("heading", craft.get("HEADING", 0))  # * 0.1
+    track.set("course", str(heading))
 
-    # Speed over ground: 0.1-knot (0.19 km/h) resolution from
+    # AIS Speed over ground: 0.1-knot (0.19 km/h) resolution from
     #                    0 to 102 knots (189 km/h)
-    sog = int(msg.get("speed", msg.get("SPEED", 0)))
-    if sog:
-        track.set("speed", str(sog * 0.514444))
+    # COT Speed is meters/second
+    sog: float = craft.get("speed", craft.get("SPEED", 0)) * 0.1 / 1.944
+    if sog != 0.0:
+        speed = str(sog)
     else:
-        track.set("speed", "9999999.0")
+        speed = "9999999.0"
+    track.set("speed", speed)
 
     # Contact
     contact = ET.Element("contact")
@@ -188,21 +217,11 @@ def ais_to_cot_xml(
 
 
 def ais_to_cot(
-    msg: dict, config: Union[dict, configparser.ConfigParser], known_craft: dict = None
+    craft: dict, config: Union[dict, None] = None, known_craft: Union[dict, None] = None
 ) -> bytes:
     """Wrapper for `ais_to_cot_xml` that returns COT as an XML string."""
-    lat = msg.get("lat")
-    lon = msg.get("lon")
-    mmsi = msg.get("mmsi")
-
-    if lat is None or lon is None or mmsi is None:
-        return None
-
-    cot: ET.ElementTree = ais_to_cot_xml(msg, config, known_craft)
-    if cot:
-        return ET.tostring(cot)
-
-    return None
+    cot: ET.ElementTree = ais_to_cot_xml(craft, config, known_craft)
+    return ET.tostring(cot) if cot else None
 
 
 def _read_known_craft_fd(csv_fd) -> list:

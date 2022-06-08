@@ -5,7 +5,7 @@ aiscot - AIS Cursor-on-Target Gateway.
    :alt: Screenshot of AIS as COT PLI in ATAK.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
 
-**IF YOU HAVE AN URGENT OPERATIONAL NEED**: Email: ops@undef.net or Signal: +1-415-598-8226
+**Tech Support**: Email: support@undef.net or Signal/WhatsApp: +1-310-621-9598
 
 AISCOT transforms AIS data to Cursor-On-Target for display on Situational Awareness 
 applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
@@ -185,12 +185,24 @@ http://ampledata.org/
 Copyright
 =========
 
-* aiscot Copyright 2022 Greg Albrecht
+* aiscot Copyright 2022 Greg Albrecht <oss@undef.net>
 * pyAISm.py Copyright 2016 Pierre Payen
-
 
 License
 =======
 
-* aiscot is licensed under the Apache License, Version 2.0. See LICENSE for details.
+Copyright 2022 Greg Albrecht <oss@undef.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
 * pyAISm.py is licensed under the MIT License. See aiscot/pyAISm.py for details.

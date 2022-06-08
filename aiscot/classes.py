@@ -199,11 +199,11 @@ class AISWorker(pytak.QueueWorker):
             poll_interval: int = int(
                 self.config.get("POLL_INTERVAL") or aiscot.DEFAULT_POLL_INTERVAL
             )
-            self._logger.info("Polling every %ss: %s", poll_interval, aishub_url)
             async with aiohttp.ClientSession() as session:
                 while 1:
-                    await self.get_aishub_feed(session, aishub_url)
                     await asyncio.sleep(poll_interval)
+                    self._logger.info("Polling every %ss: %s", poll_interval, aishub_url)
+                    await self.get_aishub_feed(session, aishub_url)
         else:
             port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
             host: str = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)

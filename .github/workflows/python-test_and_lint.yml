@@ -21,9 +21,11 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
+    - name: Install test requirements
       run: |
-        make install_test
+        make install_test_requirements
+    - name: Install package itself (editable)
+      run: |
         make editable
     - name: Lint with pylint
       run: |
@@ -31,6 +33,6 @@ jobs:
     - name: Lint with flake8
       run: |
         make flake8
-    - name: Test with pytest
+    - name: Test with pytest-cov
       run: |
         make test_cov

@@ -5,9 +5,7 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +14,6 @@
 # limitations under the License.
 #
 # Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2022 Greg Albrecht
-# License:: Apache License, Version 2.0
 #
 
 """
@@ -64,7 +60,7 @@ setuptools.setup(
     packages=[__title__],
     package_dir={__title__: __title__},
     url=f"https://github.com/ampledata/{__title__}",
-    entry_points={"console_scripts": [f"{__title__} = {__title__}.commands"]},
+    entry_points={"console_scripts": [f"{__title__} = {__title__}.commands:main"]},
     description="AIS Cursor-On-Target Gateway.",
     author="Greg Albrecht",
     author_email="oss@undef.net",

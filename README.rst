@@ -5,8 +5,6 @@ aiscot - AIS Cursor-on-Target Gateway.
    :alt: Screenshot of AIS as COT PLI in ATAK.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
 
-**Tech Support**: Email: support@undef.net or Signal/WhatsApp: +1-310-621-9598
-
 AISCOT transforms AIS data to Cursor-On-Target for display on Situational Awareness 
 applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
 for more information on the TAK program.
@@ -40,24 +38,25 @@ forwarded to AISCOT to be transformed to COT and transmitted to COT destinations
 Receive AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
 Requires a subscription to AISHUB.
 
-Support AISCOT Development
-==========================
+Support Development
+===================
 
-AISCOT has been developed for the Disaster Response, Public Safety and 
-Frontline community at-large. This software is currently provided at no-cost to 
-our end-users. Any contribution you can make to further these software development 
-efforts, and the mission of AISCOT to provide ongoing SA capabilities to our 
-end-users, is greatly appreciated:
+**Tech Support**: Email support@undef.net or Signal/WhatsApp: +1-310-621-9598
+
+This tool has been developed for the Disaster Response, Public Safety and
+Frontline Healthcare community. This software is currently provided at no-cost
+to users. Any contribution you can make to further this project's development
+efforts is greatly appreciated.
 
 .. image:: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
     :target: https://www.buymeacoffee.com/ampledata
-    :alt: Support AISCOT development: Buy me a coffee!
+    :alt: Support Development: Buy me a coffee!
 
 
 Installation
 ============
 
-AISCOT functionality is provided by a command-line tool called `aiscot`, 
+AISCOT functionality is provided by a command-line tool called ``aiscot``, 
 which can be installed several ways.
 
 **AISCOT requires Python 3.6 or above.**
@@ -92,19 +91,19 @@ Command-line options:
       -c CONFIG_FILE, --CONFIG_FILE     If specified, use this config file. Default 'config.ini'.
 
 Configuration options:
-    COT_URL : str,  default: udp://239.2.3.1:6969
+    ``COT_URL`` : str,  default: udp://239.2.3.1:6969
         URL to COT destination. Must be a URL, e.g. ``tcp://1.2.3.4:1234`` or ``tls://...:1234``, etc.
-    AIS_PORT : int, default: 5050
+    ``AIS_PORT`` : int, default: 5050
         AIS UDP Listen Port.
-    COT_STALE : int, default: 3600
+    ``COT_STALE`` : int, default: 3600
         CoT Stale period ("timeout"), in seconds. Default `3600` seconds (1 hour).
-    COT_TYPE : str, default: a-u-S-X-M
+    ``COT_TYPE`` : str, default: a-u-S-X-M
         Override COT Event Type ("marker type").
-    AISHUB_URL : str, optional
+    ``AISHUB_URL`` : str, optional
         AISHUB feed URL. See **AISHUB usage notes** in README below.
-    KNOWN_CRAFT : str, optional
+    ``KNOWN_CRAFT`` : str, optional
         Known Craft hints file. CSV file containing callsign/marker hints.
-    INCLUDE_ALL_CRAFT : bool, optional
+    ``INCLUDE_ALL_CRAFT`` : bool, optional
         If using KNOWN_CRAFT, still include other craft not in our KNOWN_CRAFT list.
 
 See example-config.ini in the source tree for example configuration.

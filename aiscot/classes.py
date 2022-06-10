@@ -5,9 +5,7 @@
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
+# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +14,6 @@
 # limitations under the License.
 #
 # Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2022 Greg Albrecht
-# License:: Apache License, Version 2.0
 #
 
 """AISCOT Class Definitions."""
@@ -202,7 +198,9 @@ class AISWorker(pytak.QueueWorker):
             async with aiohttp.ClientSession() as session:
                 while 1:
                     await asyncio.sleep(poll_interval)
-                    self._logger.info("Polling every %ss: %s", poll_interval, aishub_url)
+                    self._logger.info(
+                        "Polling every %ss: %s", poll_interval, aishub_url
+                    )
                     await self.get_aishub_feed(session, aishub_url)
         else:
             port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))

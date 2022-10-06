@@ -217,8 +217,9 @@ def ais_to_cot(
 ) -> bytes:
     """Wrapper for `ais_to_cot_xml` that returns COT as an XML string."""
     cot: ET.ElementTree = ais_to_cot_xml(craft, config, known_craft)
-    return ET.tostring(cot) if cot else None
-
+    return (
+        b"\n".join([pytak.DEFAULT_XML_DECLARATION, ET.tostring(cot)]) if cot else None
+    )
 
 def _read_known_craft_fd(csv_fd) -> list:
     """Reads known craft file into an iterable key=value array.

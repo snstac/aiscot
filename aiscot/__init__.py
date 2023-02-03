@@ -34,7 +34,9 @@ from .constants import (
     DEFAULT_SHIP_DB_FILE,
 )
 
-from .functions import create_tasks
+from .functions import ais_to_cot, create_tasks
+
+from .ais_functions import get_known_craft
 
 from .classes import AISWorker
 

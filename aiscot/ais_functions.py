@@ -27,9 +27,8 @@ __copyright__ = "Copyright 2023 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
-
 def read_known_craft_fd(csv_fd: TextIO) -> list:
-    """Read an AISCOT Known Craft file into an iterable list of transforms.
+    """Split a CSV file into an iterable key=value store.
 
     Parameters
     ----------
@@ -46,8 +45,8 @@ def read_known_craft_fd(csv_fd: TextIO) -> list:
     return all_rows
 
 
-def open_known_craft(csv_file: str) -> list:
-    """Open an AISCOT Known Craft file into an iterable list of transforms.
+def get_known_craft(csv_file: str) -> list:
+    """Read an AISCOT Known Craft file into an iterable list of transforms.
 
     Parameters
     ----------
@@ -58,17 +57,17 @@ def open_known_craft(csv_file: str) -> list:
     All Known Craft transforms.
     """
     all_rows: list = []
-    with open(csv_file) as csv_fd:
+    with open(csv_file, encoding="UTF-8") as csv_fd:
         all_rows = read_known_craft_fd(csv_fd)
     return all_rows
 
 
-def read_mid_db_file(csv_file: str = aiscot.DEFAULT_MID_DB_FILE) -> list:
-    """Read the MID_DB_FILE file into a `dict`"""
+def read_mid_db_file(csv_file: str = aiscot.DEFAULT_MID_DB_FILE) -> dict:
+    """Read the MID_DB_FILE file into a `dict`."""
     mid_digits: list = []
     mid_allocated_to: list = []
 
-    with open(csv_file) as csv_fd:
+    with open(csv_file, encoding="UTF-8") as csv_fd:
         reader = DictReader(csv_fd)
         for row in reader:
             mid_digits.append(row["Digit"])

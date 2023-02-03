@@ -106,7 +106,7 @@ class AISNetworkClient(asyncio.Protocol):
         known_craft = self.config.get("KNOWN_CRAFT")
         if known_craft:
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
-            self.known_craft_db = aiscot.read_known_craft(known_craft)
+            self.known_craft_db = aiscot.get_known_craft(known_craft)
         self.ready.set()
 
     def datagram_received(self, data, addr):
@@ -136,7 +136,7 @@ class AISWorker(pytak.QueueWorker):
         """Handle received MMSI data."""
         # self._logger.info("Received AIS: '%s'", msg)
         mmsi: str =  ""
-        
+
         for msg in data:
             mmsi = str(msg.get("MMSI", ""))
 
@@ -189,7 +189,7 @@ class AISWorker(pytak.QueueWorker):
         known_craft = self.config.get("KNOWN_CRAFT")
         if known_craft:
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
-            self.known_craft_db = aiscot.read_known_craft(known_craft)
+            self.known_craft_db = aiscot.get_known_craft(known_craft)
 
         self.feed_url: str = str(self.config.get("AISHUB_URL", ""))
 

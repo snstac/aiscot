@@ -21,9 +21,8 @@ from typing import Optional, Union
 from xml.etree.ElementTree import tostring, Element
 
 import pytak
+import aiscot
 import aiscot.ais_functions as aisfunc
-
-from aiscot import AISWorker, DEFAULT_COT_TYPE, DEFAULT_COT_STALE
 
 __author__ = "Greg Albrecht <oss@undef.net>"
 __copyright__ = "Copyright 2023 Greg Albrecht"
@@ -40,7 +39,7 @@ def create_tasks(
         2) Transmit Queue Worker
 
     This application adds:
-        AISWorker
+        `aiscot.AISWorker`
 
     Parameters
     ----------
@@ -54,7 +53,7 @@ def create_tasks(
     `set`
         Set of coroutine tasks.
     """
-    return set([AISWorker(clitool.tx_queue, config)])
+    return set([aiscot.AISWorker(clitool.tx_queue, config)])
 
 
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -97,10 +96,10 @@ def ais_to_cot_xml(
     # N.B. SectionProxy does not support dict's "fallback" parameter, you have to
     #      use explicit conditionals ('or'), like so:
     cot_type: str = str(
-        config.get("COT_TYPE") or known_craft.get("COT", DEFAULT_COT_TYPE))
+        config.get("COT_TYPE") or known_craft.get("COT", aiscot.DEFAULT_COT_TYPE))
 
     cot_stale: int = int(
-        str(config.get("COT_STALE")) or known_craft.get("STALE", DEFAULT_COT_STALE))
+        str(config.get("COT_STALE")) or known_craft.get("STALE", aiscot.DEFAULT_COT_STALE))
 
     cot_host_id: str = str(config.get("COT_HOST_ID") or "")
 

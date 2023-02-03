@@ -105,6 +105,8 @@ Configuration options:
         Known Craft hints file. CSV file containing callsign/marker hints.
     ``INCLUDE_ALL_CRAFT`` : bool, optional
         If using KNOWN_CRAFT, still include other craft not in our KNOWN_CRAFT list.
+    ``IGNORE_ATON`` : bool, optional
+        IF SET- adsbcot will ignore AIS from Aids to Naviation (buoys, etc).
 
 See example-config.ini in the source tree for example configuration.
 
@@ -176,7 +178,7 @@ Github: https://github.com/ampledata/aiscot
 
 Author
 ======
-Greg Albrecht W2GMD oss@undef.net
+Greg Albrecht oss@undef.net
 
 http://ampledata.org/
 
@@ -184,13 +186,13 @@ http://ampledata.org/
 Copyright
 =========
 
-* aiscot Copyright 2022 Greg Albrecht <oss@undef.net>
+* aiscot Copyright 2023 Greg Albrecht <oss@undef.net>
 * pyAISm.py Copyright 2016 Pierre Payen
 
 License
 =======
 
-Copyright 2022 Greg Albrecht <oss@undef.net>
+Copyright 2023 Greg Albrecht <oss@undef.net>
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

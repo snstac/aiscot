@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2022 Greg Albrecht <oss@undef.net>
+# Copyright 2023 Greg Albrecht <oss@undef.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,20 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Author:: Greg Albrecht W2GMD <oss@undef.net>
-#
 
-"""
-AISCOT: AIS Cursor-On-Target Gateway.
-~~~~
+"""AISCOT: AIS Cursor-On-Target Gateway.
 
-:author: Greg Albrecht W2GMD <oss@undef.net>
-:copyright: Copyright 2022 Greg Albrecht
+:author: Greg Albrecht <oss@undef.net>
+:copyright: Copyright 2023 Greg Albrecht
 :license: Apache License, Version 2.0
 :source: <https://github.com/ampledata/aiscot>
 """
 
-from .constants import (  # NOQA
+from .constants import (
     LOG_FORMAT,
     LOG_LEVEL,
     DEFAULT_LISTEN_PORT,
@@ -38,20 +34,14 @@ from .constants import (  # NOQA
     DEFAULT_SHIP_DB_FILE,
 )
 
-from .functions import (  # NOQA
+from .functions import (
     ais_to_cot,
-    read_known_craft,
-    get_mid,
-    get_aton,
-    get_sar,
-    get_crs,
-    get_shipname,
     ais_to_cot_xml,
     create_tasks,
 )
 
-from .classes import AISWorker  # NOQA
+from .classes import AISWorker
 
-__author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2022 Greg Albrecht"
+__author__ = "Greg Albrecht <oss@undef.net>"
+__copyright__ = "Copyright 2023 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"

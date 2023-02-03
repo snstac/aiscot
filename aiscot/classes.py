@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2022 Greg Albrecht <oss@undef.net>
+# Copyright 2023 Greg Albrecht <oss@undef.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Author:: Greg Albrecht W2GMD <oss@undef.net>
-#
 
 """AISCOT Class Definitions."""
 
@@ -22,6 +20,7 @@ import asyncio
 import logging
 
 from configparser import ConfigParser
+from typing import Optional
 
 import aiohttp
 
@@ -29,14 +28,13 @@ import pytak
 import aiscot
 import aiscot.pyAISm
 
-__author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2022 Greg Albrecht"
+__author__ = "Greg Albrecht <oss@undef.net>"
+__copyright__ = "Copyright 2023 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
 # pylint: disable=too-many-instance-attributes
 class AISNetworkClient(asyncio.Protocol):
-
     """Class for handling connections from network AIS feed."""
 
     _logger = logging.getLogger(__name__)
@@ -50,6 +48,7 @@ class AISNetworkClient(asyncio.Protocol):
     logging.getLogger("asyncio").setLevel(aiscot.LOG_LEVEL)
 
     def __init__(self, ready, queue, config) -> None:
+        """Initialize this class."""
         self.transport = None
         self.address = None
         self.known_craft_db = None
@@ -59,18 +58,19 @@ class AISNetworkClient(asyncio.Protocol):
         self.config = config
 
         if self.config.getboolean("DEBUG", False):
-            _ = [x.setLevel(logging.DEBUG) for x in self._logger.handlers]
+            for handler in self._logger.handlers:
+                handler.setLevel(logging.DEBUG)
 
     def handle_message(self, data) -> None:
-        """Handles incoming AIS data from network."""
+        """Handle incoming AIS data from network."""
         d_data = data.decode().strip()
-        msg = aiscot.pyAISm.decod_ais(d_data)
+        msg: dict = aiscot.pyAISm.decod_ais(d_data)
 
         self._logger.debug("Decoded AIS: '%s'", msg)
 
-        mmsi = str(msg.get("mmsi"))
+        mmsi = str(msg.get("mmsi", ""))
 
-        known_craft = {}
+        known_craft: dict = {}
 
         if self.known_craft_db:
             known_craft = (
@@ -92,7 +92,7 @@ class AISNetworkClient(asyncio.Protocol):
         ):
             return
 
-        event: str = aiscot.ais_to_cot(msg, config=self.config, known_craft=known_craft)
+        event: bytes = aiscot.ais_to_cot(msg, config=self.config, known_craft=known_craft)
 
         if event:
             self.queue.put_nowait(event)
@@ -123,23 +123,24 @@ class AISNetworkClient(asyncio.Protocol):
 
 
 class AISWorker(pytak.QueueWorker):
-
     """AIS Cursor-on-Target Class."""
 
     def __init__(self, queue: asyncio.Queue, config: ConfigParser) -> None:
         super().__init__(queue, config)
         _ = [x.setFormatter(aiscot.LOG_FORMAT) for x in self._logger.handlers]
         self.known_craft_db = None
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.feed_url: str = ""
 
     async def handle_data(self, data) -> None:
-        """Handles received MMSI data."""
+        """Handle received MMSI data."""
         # self._logger.info("Received AIS: '%s'", msg)
-        mmsi = None
-
+        mmsi: str =  ""
+        
         for msg in data:
-            mmsi = str(msg.get("MMSI"))
+            mmsi = str(msg.get("MMSI", ""))
 
-            known_craft = {}
+            known_craft: dict = {}
 
             if self.known_craft_db:
                 known_craft = (
@@ -164,11 +165,11 @@ class AISWorker(pytak.QueueWorker):
             event: str = aiscot.ais_to_cot(msg, self.config, known_craft=known_craft)
             await self.put_queue(event)
 
-    async def get_aishub_feed(self, session: aiohttp.ClientSession, feed_url) -> None:
-        """
-        Gets AIS data from AISHub feed.
-        """
-        response = await session.request(method="GET", url=feed_url)
+    async def get_feed(self) -> None:
+        """Get AIS data from AISHub feed."""
+        if not self.session:
+            return
+        response = await self.session.request(method="GET", url=self.feed_url)
         response.raise_for_status()
         json_resp = await response.json()
 
@@ -182,7 +183,7 @@ class AISWorker(pytak.QueueWorker):
             await self.handle_data(ships)
 
     async def run(self, number_of_iterations=-1) -> None:
-        """Runs this Thread, reads AIS & outputs CoT."""
+        """Run this Thread, reads AIS & outputs CoT."""
         self._logger.info("Sending to: %s", self.config.get("COT_URL"))
 
         known_craft = self.config.get("KNOWN_CRAFT")
@@ -190,29 +191,36 @@ class AISWorker(pytak.QueueWorker):
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
             self.known_craft_db = aiscot.read_known_craft(known_craft)
 
-        aishub_url = self.config.get("AISHUB_URL")
-        if aishub_url:
-            poll_interval: int = int(
-                self.config.get("POLL_INTERVAL") or aiscot.DEFAULT_POLL_INTERVAL
-            )
-            async with aiohttp.ClientSession() as session:
-                while 1:
-                    await asyncio.sleep(poll_interval)
-                    self._logger.info(
-                        "Polling every %ss: %s", poll_interval, aishub_url
-                    )
-                    await self.get_aishub_feed(session, aishub_url)
-        else:
-            port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
-            host: str = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)
+        self.feed_url: str = str(self.config.get("AISHUB_URL", ""))
 
-            loop = asyncio.get_event_loop()
-            ready = asyncio.Event()
-            self._logger.info("Listening for AIS on %s:%s", host, port)
-            await loop.create_datagram_endpoint(
+        if self.feed_url:
+            await self.poll_feed()
+        else:
+            await self.network_rx()
+
+    async def network_rx(self):
+        port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
+        host: str = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)
+
+        loop = asyncio.get_event_loop()
+        ready = asyncio.Event()
+        self._logger.info("Listening for AIS on %s:%s", host, port)
+        await loop.create_datagram_endpoint(
                 lambda: AISNetworkClient(ready, self.queue, self.config),
                 local_addr=(host, port),
             )
-            await ready.wait()
+        await ready.wait()
+        while 1:
+            await asyncio.sleep(0.01)
+
+    async def poll_feed(self):
+        poll_interval: int = int(
+                self.config.get("POLL_INTERVAL") or aiscot.DEFAULT_POLL_INTERVAL
+            )
+        async with aiohttp.ClientSession() as self.session:
             while 1:
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(poll_interval)
+                self._logger.info(
+                        "Polling every %ss: %s", poll_interval, self.feed_url
+                    )
+                await self.get_feed()

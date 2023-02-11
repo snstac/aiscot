@@ -1,13 +1,17 @@
-aiscot - AIS Cursor on Target Gateway.
-****************************************
+AISCOT - AIS Cursor on Target Gateway
+*************************************
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921-25.png
    :alt: Screenshot of AIS as COT PLI in ATAK.
-   :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
+   :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
 
-AISCOT transforms AIS data to Cursor on Target for display on Situational Awareness 
-applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
-for more information on the TAK program.
+AISCOT converts and forwards automatic identification system (AIS) to Cursor on Target 
+(CoT) for use with TAK products such as ATAK, WinTAK & iTAK. Vessels sending AIS either 
+over the air (RF), through a local networks (NMEA), or through internet aggregators 
+(AISHUB), will be displayed in TAK with appropriate icons, attitude, type, track, 
+bearing, speed, callsign and more.
+
+For more information the TAK Product suite, see: https://ww.tak.gov
 
 AISCOT was original developed to support an open ocean boat race in the Northern 
 Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
@@ -17,8 +21,8 @@ AISCOT Concept of Operation
 
 AISCOT can operate in two different modes, as described in detail below:
 
-1. AIS Over-the-air
-2. AIS Aggregator
+1. AIS Over-the-air (RF)
+2. AIS Aggregator (AISHUB)
 
 **AIS Over-the-air Operation (RF)**
 
@@ -37,6 +41,7 @@ forwarded to AISCOT to be transformed to COT and transmitted to COT destinations
 
 Receive AIS data from the `AISHUB <https://www.aishub.com>`_ service. 
 Requires a subscription to AISHUB.
+
 
 Support Development
 ===================
@@ -168,7 +173,8 @@ Database Update
 ===============
 Occasional updates to the YADD Ship Name database can be found at: http://www.yaddnet.org/pages/php/test/tmp/
 
-Updates to the MID database can be found at:  
+Updates to the MID database can be found at: TK  
+
 
 Source
 ======

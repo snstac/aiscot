@@ -1,6 +1,6 @@
-# Python Distribution Package Requirements for AIS Cursor-on-Target Gateway.
+# Python Distribution Package Requirements for AIS Cursor Target Gateway.
 #
 # Source:: https://github.com/ampledata/aiscot
-# Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2022 Greg Albrecht.
+# Author:: Greg Albrecht <oss@undef.net>
+# Copyright:: Copyright 2023 Greg Albrecht.
 # License:: Apache License, Version 2.0

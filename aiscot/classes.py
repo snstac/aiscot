@@ -20,7 +20,7 @@ import asyncio
 import logging
 
 from configparser import ConfigParser
-from typing import Optional
+from typing import Any, List, Optional
 
 import aiohttp
 
@@ -92,15 +92,17 @@ class AISNetworkClient(asyncio.Protocol):
         ):
             return
 
-        event: bytes = aiscot.ais_to_cot(msg, config=self.config, known_craft=known_craft)
+        event: Optional[bytes] = aiscot.ais_to_cot(
+            msg, config=self.config, known_craft=known_craft)
 
         if event:
             self.queue.put_nowait(event)
 
     def connection_made(self, transport):
-        """Called when a network connection is made."""
+        """Call when a network connection is made."""
         self.transport = transport
         self.address = transport.get_extra_info("peername")
+        self.address = self.address or "peer (no peername available)."
         self._logger.info("Connection from %s", self.address)
 
         known_craft = self.config.get("KNOWN_CRAFT")
@@ -110,13 +112,13 @@ class AISNetworkClient(asyncio.Protocol):
         self.ready.set()
 
     def datagram_received(self, data, addr):
-        """Called when a UDP datagram is received."""
+        """Call when a UDP datagram is received."""
         self._logger.debug("Recieved from %s: '%s'", addr, data)
         for line in data.splitlines():
             self.handle_message(line)
 
     def connection_lost(self, exc):
-        """Called when a network connection is lost."""
+        """Call when a network connection is lost."""
         self.ready.clear()
         self._logger.exception(exc)
         self._logger.warning("Disconnected from %s", self.address)
@@ -126,11 +128,12 @@ class AISWorker(pytak.QueueWorker):
     """AIS Cursor-on-Target Class."""
 
     def __init__(self, queue: asyncio.Queue, config: ConfigParser) -> None:
+        """Initialize an instance of this class."""
         super().__init__(queue, config)
         _ = [x.setFormatter(aiscot.LOG_FORMAT) for x in self._logger.handlers]
-        self.known_craft_db = None
+        self.known_craft_db: List[Any] = []
         self.session: Optional[aiohttp.ClientSession] = None
-        self.feed_url: str = ""
+        self.feed_url: Optional[str] = None
 
     async def handle_data(self, data) -> None:
         """Handle received MMSI data."""
@@ -139,6 +142,8 @@ class AISWorker(pytak.QueueWorker):
 
         for msg in data:
             mmsi = str(msg.get("MMSI", ""))
+            if not mmsi:
+                continue
 
             known_craft: dict = {}
 
@@ -162,8 +167,11 @@ class AISWorker(pytak.QueueWorker):
             ):
                 continue
 
-            event: str = aiscot.ais_to_cot(msg, self.config, known_craft=known_craft)
-            await self.put_queue(event)
+            event: Optional[bytes] = aiscot.ais_to_cot(
+                msg, self.config, known_craft=known_craft)
+
+            if event:
+                await self.put_queue(event)
 
     async def get_feed(self) -> None:
         """Get AIS data from AISHub feed."""
@@ -191,7 +199,7 @@ class AISWorker(pytak.QueueWorker):
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
             self.known_craft_db = aiscot.get_known_craft(known_craft)
 
-        self.feed_url: str = str(self.config.get("AISHUB_URL", ""))
+        self.feed_url = self.config.get("AISHUB_URL", self.config.get("FEED_URL"))
 
         if self.feed_url:
             await self.poll_feed()
@@ -199,6 +207,7 @@ class AISWorker(pytak.QueueWorker):
             await self.network_rx()
 
     async def network_rx(self):
+        """Start a network receiver."""
         port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
         host: str = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)
 
@@ -214,8 +223,9 @@ class AISWorker(pytak.QueueWorker):
             await asyncio.sleep(0.01)
 
     async def poll_feed(self):
+        """Poll the data source feed."""
         poll_interval: int = int(
-                self.config.get("POLL_INTERVAL") or aiscot.DEFAULT_POLL_INTERVAL
+                self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL) 
             )
         async with aiohttp.ClientSession() as self.session:
             while 1:

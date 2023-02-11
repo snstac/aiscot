@@ -158,13 +158,13 @@ def get_crs(mmsi: str) -> bool:
     :rtype: bool
     """
     crs = False
-    # Known CRS':
+    # Known CRS:
     # 3669145
     # 3669708
     # 3669709
     if str(mmsi)[:4] == "3669" and len(str(mmsi)) == 7:
         crs = True
-    elif str(mmsi)[:4] == "003369":
+    elif str(mmsi)[:6] == "003369":
         crs = True
     return crs
 

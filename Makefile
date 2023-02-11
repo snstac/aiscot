@@ -72,7 +72,7 @@ pytest:
 test: editable install_test_requirements pytest
 
 test_cov:
-	pytest --cov=$(this_app)
+	pytest --cov=$(this_app) --cov-report term-missing
 
 black:
 	black .

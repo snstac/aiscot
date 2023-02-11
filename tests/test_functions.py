@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2022 Greg Albrecht <oss@undef.net>
+# Copyright 2023 Greg Albrecht <oss@undef.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Author:: Greg Albrecht W2GMD <oss@undef.net>
-# Copyright:: Copyright 2022 Greg Albrecht
-# License:: Apache License, Version 2.0
-#
 
 """AISCOT Function Tests."""
 
@@ -26,12 +22,13 @@ import io
 import xml.etree.ElementTree as ET
 
 import pytest
-import aiscot
-import aiscot.functions
+
+from aiscot.functions import ais_to_cot, ais_to_cot_xml
+from aiscot.ais_functions import read_known_craft_fd
 
 
-__author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2022 Greg Albrecht"
+__author__ = "Greg Albrecht <oss@undef.net>"
+__copyright__ = "Copyright 2023 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
@@ -122,11 +119,11 @@ def sample_known_craft():
 366892000,TACO_01,a-f-S-T-A-C-O,
 """
     csv_fd = io.StringIO(sample_csv)
-    return aiscot.functions._read_known_craft_fd(csv_fd)
+    return read_known_craft_fd(csv_fd)
 
 
 def test_ais_to_cot_xml(sample_data_pyAISm):
-    cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm)
+    cot = ais_to_cot_xml(sample_data_pyAISm)
     assert isinstance(cot, ET.Element)
     assert cot.tag == "event"
     assert cot.attrib["version"] == "2.0"
@@ -141,7 +138,6 @@ def test_ais_to_cot_xml(sample_data_pyAISm):
 
     detail = cot.findall("detail")
     assert detail[0].tag == "detail"
-    assert detail[0].attrib["uid"] == "MMSI-366892000"
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
@@ -162,7 +158,7 @@ def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft)
         or [{}]
     )[0]
 
-    cot = aiscot.functions.ais_to_cot_xml(sample_data_pyAISm, known_craft=known_craft)
+    cot = ais_to_cot_xml(sample_data_pyAISm, known_craft=known_craft)
 
     assert isinstance(cot, ET.Element)
     assert cot.tag == "event"
@@ -178,7 +174,6 @@ def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft)
 
     detail = cot.findall("detail")
     assert detail[0].tag == "detail"
-    assert detail[0].attrib["uid"] == "MMSI-366892000"
 
     contact = detail[0].findall("contact")
     assert contact[0].tag == "contact"
@@ -189,17 +184,68 @@ def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft)
     assert track[0].attrib["speed"] == "3.292181069958848"
 
 
-def test_get_mid(sample_data_pyAISm):
-    """
-    Tests that the git_mid function can return the country corresponding
-    to the MID in the given MMSI.
-    """
-    mmsi = sample_data_pyAISm.get("mmsi")
-    country = aiscot.get_mid(mmsi)
-    assert country == "United States of America"
+def test_ais_to_cot_xml_none():
+    """Test that `ais_to_cot_xml()` only renders valid input data."""
+    assert ais_to_cot_xml({
+        "mmsi": 366892000,
+        "lon": 0,
+        "lat": 37.81691333333333,
+    }) is None
+    assert ais_to_cot_xml({
+        "mmsi": 366892000,
+        "lon": -122.51208,
+        "lat": 0,
+    }) is None
+    assert ais_to_cot_xml({
+        "mmsi": "",
+        "lon": -122.51208,
+        "lat": 37.81691333333333,
+    }) is None
+    assert ais_to_cot_xml({}) is None
 
 
-def test_get_aton(sample_aton):
-    mmsi = sample_aton.get("mmsi")
-    aton = aiscot.get_aton(mmsi)
-    assert aton == True
+def test_ais_to_cot_xml_dont_ignore_aton(sample_aton):
+    """Test ignoring Aids to Naviation (ATON)."""
+    assert ais_to_cot_xml(sample_aton, {"IGNORE_ATON": False}) is not None
+
+
+def test_ais_to_cot_xml_ignore_aton(sample_aton):
+    """Test ignoring Aids to Naviation (ATON)."""
+    assert ais_to_cot_xml(sample_aton, {"IGNORE_ATON": True}) is None
+
+
+def test_ais_to_cot_xml_shipname(sample_data_pyAISm):
+    """Test converting AIS to CoT with a known shipname."""
+    sample_data_pyAISm["mmsi"] = "303990000"
+    cot = ais_to_cot_xml(sample_data_pyAISm)
+
+    detail = cot.findall("detail")
+    assert detail[0].tag == "detail"
+
+    contact = detail[0].findall("contact")
+    assert contact[0].attrib["callsign"] == "USCG EAGLE"
+
+
+def test_ais_to_cot_xml_sar(sample_data_pyAISm):
+    """Test converting AIS to CoT for a SAR vessel."""
+    sample_data_pyAISm["mmsi"] = "303862000"
+    cot = ais_to_cot_xml(sample_data_pyAISm)
+
+    assert cot.tag == "event"
+    assert cot.attrib["type"] == "a-f-S-X-L"
+
+
+def test_ais_to_cot_xml_crs(sample_data_pyAISm):
+    """Test converting AIS to CoT for a CRS vessel."""
+    sample_data_pyAISm["mmsi"] = "3669123"
+    cot = ais_to_cot_xml(sample_data_pyAISm)
+
+    assert cot.tag == "event"
+    assert cot.attrib["type"] == "a-f-G-I-U-T"
+
+
+def test_ais_to_cot(sample_data_pyAISm):
+    """Test converting AIS to CoT."""
+    cot: bytes = ais_to_cot(sample_data_pyAISm)
+    assert b"a-f-S-X-M" in cot
+    assert b"MMSI-366892000" in cot

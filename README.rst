@@ -1,11 +1,11 @@
-aiscot - AIS Cursor-on-Target Gateway.
+aiscot - AIS Cursor on Target Gateway.
 ****************************************
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921-25.png
    :alt: Screenshot of AIS as COT PLI in ATAK.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921.png
 
-AISCOT transforms AIS data to Cursor-On-Target for display on Situational Awareness 
+AISCOT transforms AIS data to Cursor on Target for display on Situational Awareness 
 applications like ATAK, WinTAK, iTAK, TAKX, COPERS, et al. See https://www.tak.gov/ 
 for more information on the TAK program.
 
@@ -40,13 +40,6 @@ Requires a subscription to AISHUB.
 
 Support Development
 ===================
-
-**Tech Support**: Email support@undef.net or Signal/WhatsApp: +1-310-621-9598
-
-This tool has been developed for the Disaster Response, Public Safety and
-Frontline Healthcare community. This software is currently provided at no-cost
-to users. Any contribution you can make to further this project's development
-efforts is greatly appreciated.
 
 .. image:: https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png
     :target: https://www.buymeacoffee.com/ampledata
@@ -170,6 +163,12 @@ forwarding COT to a TAK Server and WinTAK & ATAK clients.
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_home.png
    :alt: AISCOT Example setup
 
+
+Database Update
+===============
+Occasional updates to the YADD Ship Name database can be found at: http://www.yaddnet.org/pages/php/test/tmp/
+
+Updates to the MID database can be found at:  
 
 Source
 ======

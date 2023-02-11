@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2022 Greg Albrecht <oss@undef.net>
+# Copyright 2023 Greg Albrecht <oss@undef.net>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Author:: Greg Albrecht W2GMD <oss@undef.net>
-#
 
 """AISCOT Constants."""
 
@@ -22,8 +20,8 @@ import logging
 import os
 import pkg_resources
 
-__author__ = "Greg Albrecht W2GMD <oss@undef.net>"
-__copyright__ = "Copyright 2022 Greg Albrecht"
+__author__ = "Greg Albrecht <oss@undef.net>"
+__copyright__ = "Copyright 2023 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"
 
 
@@ -59,6 +57,6 @@ DEFAULT_MID_DB_FILE = os.getenv(
 DEFAULT_SHIP_DB_FILE = os.getenv(
     "SHIP_DB_FILE",
     pkg_resources.resource_filename(
-        __name__, "data/yadd_mmsi_ship_2021-11-03-170131.txt"
+        __name__, "data/yadd_mmsi_ship_2023-02-11-001541.txt"
     ),
 )

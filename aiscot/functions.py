@@ -98,8 +98,7 @@ def ais_to_cot_xml(
     cot_type: str = str(
         config.get("COT_TYPE") or known_craft.get("COT") or aiscot.DEFAULT_COT_TYPE)
 
-    cot_stale: int = int(
-        str(config.get("COT_STALE")) or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE)
+    cot_stale: int = int(config.get("COT_STALE") or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE)
 
     cot_host_id: str = str(config.get("COT_HOST_ID") or "")
 

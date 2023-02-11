@@ -1,9 +1,9 @@
 AISCOT - AIS Cursor on Target Gateway
 *************************************
 
-.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
+.. image:: https://raw.githubusercontent.com/ampledata/aiscot/2023_updates/docs/screenshot_1676076870_2962.png
    :alt: Screenshot of AIS as COT PLI in ATAK.
-   :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
+   :target: https://raw.githubusercontent.com/ampledata/aiscot/2023_updates/docs/screenshot_1676076870_2962.png
 
 AISCOT converts and forwards automatic identification system (AIS) to Cursor on Target 
 (CoT) for use with TAK products such as ATAK, WinTAK & iTAK. Vessels sending AIS either 

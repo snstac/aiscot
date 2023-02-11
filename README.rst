@@ -1,7 +1,7 @@
 AISCOT - AIS Cursor on Target Gateway
 *************************************
 
-.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot-1601068921-25.png
+.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
    :alt: Screenshot of AIS as COT PLI in ATAK.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
 

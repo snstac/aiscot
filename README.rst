@@ -5,8 +5,12 @@ AISCOT - AIS Cursor on Target Gateway
    :alt: Screenshot of AIS as COT PLI in ATAK.
    :target: https://raw.githubusercontent.com/ampledata/aiscot/2023_updates/docs/screenshot_1676076870_2962.png
 
-AISCOT converts and forwards automatic identification system (AIS) to Cursor on Target 
-(CoT) for use with TAK products such as ATAK, WinTAK & iTAK. Vessels sending AIS either 
+Description
+===========
+
+The Automatic Identification System to Cursor on Target gateway (AISCOT) transforms 
+automatic identification system (AIS) to Cursor on Target (CoT) for use with TAK 
+products such as ATAK, WinTAK & iTAK. Vessels sending AIS either 
 over the air (RF), through a local networks (NMEA), or through internet aggregators 
 (AISHUB), will be displayed in TAK with appropriate icons, attitude, type, track, 
 bearing, speed, callsign and more.
@@ -16,8 +20,9 @@ For more information the TAK Product suite, see: https://ww.tak.gov
 AISCOT was original developed to support an open ocean boat race in the Northern 
 Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
 
-AISCOT Concept of Operation
-===========================
+
+Concept of Operations
+=====================
 
 AISCOT can operate in two different modes, as described in detail below:
 
@@ -54,10 +59,10 @@ Support Development
 Installation
 ============
 
-AISCOT functionality is provided by a command-line tool called ``aiscot``, 
-which can be installed several ways.
-
 **AISCOT requires Python 3.6 or above.**
+
+AISCOT functionality is provided by a command-line tool called ``aiscot``, which can be 
+installed several ways.
 
 Installing as a Debian/Ubuntu Package [Use Me!]::
 
@@ -84,20 +89,27 @@ Usage
 AISCOT can be configured with a INI-style configuration file, or using 
 environmental variables.
 
-Command-line options:
-      -h, --help            show this help message and exit
-      -c CONFIG_FILE, --CONFIG_FILE     If specified, use this config file. Default 'config.ini'.
+Command-line options::
+
+    usage: aiscot [-h] [-c CONFIG_FILE] [-p PREF_PACKAGE]
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -c CONFIG_FILE, --CONFIG_FILE CONFIG_FILE
+                            Optional configuration file. Default: config.ini
+    -p PREF_PACKAGE, --PREF_PACKAGE PREF_PACKAGE
+                            Optional connection preferences package zip file (aka Data Package).
 
 Configuration options:
     ``COT_URL`` : str,  default: udp://239.2.3.1:6969
-        URL to COT destination. Must be a URL, e.g. ``tcp://1.2.3.4:1234`` or ``tls://...:1234``, etc.
+        URL to CoT destination. Must be a URL, e.g. ``tcp://1.2.3.4:1234`` or ``tls://...:1234``, etc. See `PyTAK <https://github.com/ampledata/pytak#configuration-parameters>`_ for options, including TLS support.
     ``AIS_PORT`` : int, default: 5050
-        AIS UDP Listen Port.
+        AIS UDP Listen Port, for use with Over-the-air (RF) AIS.
     ``COT_STALE`` : int, default: 3600
         CoT Stale period ("timeout"), in seconds. Default `3600` seconds (1 hour).
     ``COT_TYPE`` : str, default: a-u-S-X-M
         Override COT Event Type ("marker type").
-    ``AISHUB_URL`` : str, optional
+    ``FEED_URL`` : str, optional
         AISHUB feed URL. See **AISHUB usage notes** in README below.
     ``KNOWN_CRAFT`` : str, optional
         Known Craft hints file. CSV file containing callsign/marker hints.
@@ -107,23 +119,6 @@ Configuration options:
         IF SET- adsbcot will ignore AIS from Aids to Naviation (buoys, etc).
 
 See example-config.ini in the source tree for example configuration.
-
-**COT destination notes**
-
-The ``COT_URL`` configuration option must be specified as a fully-qualified URL. By 
-default this tool will send COT to the default ATAK & WinTAK network multicast UDP 
-group & port: ``udp://239.2.3.1:6969``. You can specify other destinations by either 
-setting the ``COT_URL`` configuration option in the config INI, or by setting the ``COT_URL`` 
-environmental variable.
-
-Example ``COT_URL``:
-
-* ``tcp://172.17.2.100:4242`` : Send COT as TCP to host 172.17.2.100 on port 4242.
-
-* ``tls://192.168.2.1:8089`` : Send COT as TLS to host 192.168.2.1 on port 8089. Requires setting additional environmental variables, see `PyTAK TLS documentation <https://github.com/ampledata/pytak#tls-support>`_.
-
-* ``udp://10.0.1.99:8087`` : Send COT as unicast UDP to host 10.0.1.99 on port 8087.
-
 
 **AISHUB usage notes**
 
@@ -162,7 +157,7 @@ Example Setup
 
 The following diagram shows an example setup of AISCOT utilizing a dAISy+ AIS receiver 
 with an outboard Marine VHF antenna, a Raspberry Pi running aisdispatcher and AISCOT, 
-forwarding COT to a TAK Server and WinTAK & ATAK clients.
+forwarding COT to a TAK Server and WinTAK & ATAK clients. (OV-1)
 
 
 .. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/aiscot_home.png
@@ -193,6 +188,7 @@ Copyright
 
 * aiscot Copyright 2023 Greg Albrecht <oss@undef.net>
 * pyAISm.py Copyright 2016 Pierre Payen
+
 
 License
 =======

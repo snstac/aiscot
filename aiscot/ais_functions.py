@@ -16,9 +16,8 @@
 
 """AISCOT Functions."""
 
-from configparser import SectionProxy
 from csv import DictReader
-from typing import Optional, TextIO, Union
+from typing import TextIO
 
 import aiscot
 

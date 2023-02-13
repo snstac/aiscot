@@ -25,7 +25,7 @@ __license__ = "Apache License, Version 2.0"
 
 def main() -> None:
     """CLI tool boilerplate."""
-    pytak.cli(__name__.split(".")[0])
+    pytak.cli(__name__.split('.', maxsplit=1)[0])
 
 
 if __name__ == "__main__":

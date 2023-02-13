@@ -138,7 +138,7 @@ class AISWorker(pytak.QueueWorker):
     async def handle_data(self, data) -> None:
         """Handle received MMSI data."""
         # self._logger.info("Received AIS: '%s'", msg)
-        mmsi: str =  ""
+        mmsi: str = ""
 
         for msg in data:
             mmsi = str(msg.get("MMSI", ""))
@@ -225,7 +225,7 @@ class AISWorker(pytak.QueueWorker):
     async def poll_feed(self):
         """Poll the data source feed."""
         poll_interval: int = int(
-                self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL) 
+                self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL)
             )
         async with aiohttp.ClientSession() as self.session:
             while 1:

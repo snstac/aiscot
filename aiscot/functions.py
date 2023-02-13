@@ -58,7 +58,8 @@ def create_tasks(
 
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 def ais_to_cot_xml(
-    craft: dict, config: Union[dict, SectionProxy, None] = None, known_craft: Optional[dict] = None
+    craft: dict, config: Union[dict, SectionProxy, None] = None,
+    known_craft: Optional[dict] = None
 ) -> Optional[Element]:
     """Convert AIS sentences to Cursor on Target.
 
@@ -98,14 +99,16 @@ def ais_to_cot_xml(
     cot_type: str = str(
         config.get("COT_TYPE") or known_craft.get("COT") or aiscot.DEFAULT_COT_TYPE)
 
-    cot_stale: int = int(config.get("COT_STALE") or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE)
+    cot_stale: int = int(
+        config.get("COT_STALE") or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE)
 
     cot_host_id: str = str(config.get("COT_HOST_ID") or "")
 
     aiscotx: Element = Element("_aiscot_")
     aiscotx.set("cot_host_id", cot_host_id)
 
-    ais_name: str = str(craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
+    ais_name: str = str(
+        craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
     shipname: str = str(craft.get("shipname", aisfunc.get_shipname(mmsi)))
     vessel_type: str = str(craft.get("type", craft.get("TYPE", "")))
 
@@ -214,7 +217,8 @@ def ais_to_cot_xml(
 
 
 def ais_to_cot(
-    craft: dict, config: Union[dict, SectionProxy, None] = None, known_craft: Optional[dict] = None
+    craft: dict, config: Union[dict, SectionProxy, None] = None,
+    known_craft: Optional[dict] = None
 ) -> Optional[bytes]:
     """Convert AIS to CoT XML and return it as 'TAK Protocol, Version 0'.
 

@@ -25,7 +25,7 @@ import sys
 import setuptools
 
 __title__ = "aiscot"
-__version__ = "5.2.0"
+__version__ = "5.2.1"
 __author__ = "Greg Albrecht <oss@undef.net>"
 __copyright__ = "Copyright 2023 Greg Albrecht"
 __license__ = "Apache License, Version 2.0"

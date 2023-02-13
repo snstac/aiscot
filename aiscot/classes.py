@@ -18,6 +18,7 @@
 
 import asyncio
 import logging
+import warnings
 
 from configparser import ConfigParser
 from typing import Any, List, Optional
@@ -199,7 +200,13 @@ class AISWorker(pytak.QueueWorker):
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
             self.known_craft_db = aiscot.get_known_craft(known_craft)
 
-        self.feed_url = self.config.get("AISHUB_URL", self.config.get("FEED_URL"))
+        self.feed_url = self.config.get("AISHUB_URL")
+        if self.feed_url:
+            warnings.warn(
+                ("DEPRECATED: AISHUB_URL configuration parameter detected, "
+                "please use FEED_URL."))
+        else:
+            self.feed_url = self.config.get("FEED_URL")
 
         if self.feed_url:
             await self.poll_feed()

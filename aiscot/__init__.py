@@ -19,7 +19,7 @@
 
 """AISCOT: Display Ships in TAK - AIS to TAK Gateway"""
 
-__version__ = "6.0.0-beta1"
+__version__ = "6.0.0-beta2"
 
 # Python 3.6 test/build work-around:
 try:

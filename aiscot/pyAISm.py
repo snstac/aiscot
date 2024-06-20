@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# pyAISm.py from https://github.com/snstac/aiscot
 #
 # The MIT License (MIT)
 #
@@ -330,7 +331,7 @@ def decod_data(data):
         ais_data = decod_type[type_nb](
             data
         )  # try to decode the sentense without assumption of its type
-    except (KeyError):  # if it fails, like a type 16 message, execute following code
+    except KeyError:  # if it fails, like a type 16 message, execute following code
         logger.info("Cannot decode message type " + str(type_nb))
         ais_data = {"type": type_nb}
     except:

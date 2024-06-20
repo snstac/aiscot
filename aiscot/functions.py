@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# functions.py from https://github.com/snstac/aiscot
 #
-# Copyright 2023 Greg Albrecht <oss@undef.net>
+# Copyright Sensors & Signals LLC https://www.snstac.com
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +19,8 @@
 
 """AISCOT functions for parsing AIS and generating Cursor on Target."""
 
+import xml.etree.ElementTree as ET
+
 from configparser import SectionProxy
 from typing import Optional, Union
 from xml.etree.ElementTree import tostring, Element
@@ -24,14 +29,8 @@ import pytak
 import aiscot
 import aiscot.ais_functions as aisfunc
 
-__author__ = "Greg Albrecht <oss@undef.net>"
-__copyright__ = "Copyright 2023 Greg Albrecht"
-__license__ = "Apache License, Version 2.0"
 
-
-def create_tasks(
-    config: Union[dict, SectionProxy], clitool: pytak.CLITool
-) -> set:
+def create_tasks(config: Union[dict, SectionProxy], clitool: pytak.CLITool) -> set:
     """Bootstrap a set of coroutine tasks for a PyTAK application.
 
     Bootstrapped tasks:
@@ -58,8 +57,9 @@ def create_tasks(
 
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 def ais_to_cot_xml(
-    craft: dict, config: Union[dict, SectionProxy, None] = None,
-    known_craft: Optional[dict] = None
+    craft: dict,
+    config: Union[dict, SectionProxy, None] = None,
+    known_craft: Optional[dict] = None,
 ) -> Optional[Element]:
     """Convert AIS sentences to Cursor on Target.
 
@@ -97,20 +97,25 @@ def ais_to_cot_xml(
     # N.B. SectionProxy does not support dict's "fallback" parameter, you have to
     #      use explicit conditionals ('or'), like so:
     cot_type: str = str(
-        config.get("COT_TYPE") or known_craft.get("COT") or aiscot.DEFAULT_COT_TYPE)
+        config.get("COT_TYPE") or known_craft.get("COT") or aiscot.DEFAULT_COT_TYPE
+    )
 
     cot_stale: int = int(
-        config.get("COT_STALE") or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE)
+        config.get("COT_STALE") or known_craft.get("STALE") or aiscot.DEFAULT_COT_STALE
+    )
 
     cot_host_id: str = str(config.get("COT_HOST_ID") or "")
 
     aiscotx: Element = Element("_aiscot_")
     aiscotx.set("cot_host_id", cot_host_id)
 
-    ais_name: str = str(
-        craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
+    ais_name: str = (
+        str(craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
+    )
     shipname: str = str(craft.get("shipname", aisfunc.get_shipname(mmsi)))
     vessel_type: str = str(craft.get("type", craft.get("TYPE", "")))
+
+    cot_icon = config.get("COT_ICON")
 
     if ais_name:
         remarks_fields.append(f"AIS Name: {ais_name}")
@@ -200,6 +205,11 @@ def ais_to_cot_xml(
     detail.append(contact)
     detail.append(remarks)
 
+    if cot_icon:
+        usericon = ET.Element("usericon")
+        usericon.set("iconsetpath", cot_icon)
+        detail.append(usericon)
+
     root = Element("event")
     root.set("version", "2.0")
     root.set("type", cot_type)
@@ -217,8 +227,9 @@ def ais_to_cot_xml(
 
 
 def ais_to_cot(
-    craft: dict, config: Union[dict, SectionProxy, None] = None,
-    known_craft: Optional[dict] = None
+    craft: dict,
+    config: Union[dict, SectionProxy, None] = None,
+    known_craft: Optional[dict] = None,
 ) -> Optional[bytes]:
     """Convert AIS to CoT XML and return it as 'TAK Protocol, Version 0'.
 

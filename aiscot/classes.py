@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# classes.py from https://github.com/snstac/aiscot
 #
-# Copyright 2023 Greg Albrecht <oss@undef.net>
+# Copyright Sensors & Signals LLC https://www.snstac.com
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -28,10 +31,6 @@ import aiohttp
 import pytak
 import aiscot
 import aiscot.pyAISm
-
-__author__ = "Greg Albrecht <oss@undef.net>"
-__copyright__ = "Copyright 2023 Greg Albrecht"
-__license__ = "Apache License, Version 2.0"
 
 
 # pylint: disable=too-many-instance-attributes
@@ -94,12 +93,13 @@ class AISNetworkClient(asyncio.Protocol):
             return
 
         event: Optional[bytes] = aiscot.ais_to_cot(
-            msg, config=self.config, known_craft=known_craft)
+            msg, config=self.config, known_craft=known_craft
+        )
 
         if event:
             self.queue.put_nowait(event)
 
-    def connection_made(self, transport):
+    def connection_made(self, transport) -> None:
         """Call when a network connection is made."""
         self.transport = transport
         self.address = transport.get_extra_info("peername")
@@ -112,13 +112,13 @@ class AISNetworkClient(asyncio.Protocol):
             self.known_craft_db = aiscot.get_known_craft(known_craft)
         self.ready.set()
 
-    def datagram_received(self, data, addr):
+    def datagram_received(self, data, addr) -> None:
         """Call when a UDP datagram is received."""
         self._logger.debug("Recieved from %s: '%s'", addr, data)
         for line in data.splitlines():
             self.handle_message(line)
 
-    def connection_lost(self, exc):
+    def connection_lost(self, exc) -> None:
         """Call when a network connection is lost."""
         self.ready.clear()
         self._logger.exception(exc)
@@ -169,7 +169,8 @@ class AISWorker(pytak.QueueWorker):
                 continue
 
             event: Optional[bytes] = aiscot.ais_to_cot(
-                msg, self.config, known_craft=known_craft)
+                msg, self.config, known_craft=known_craft
+            )
 
             if event:
                 await self.put_queue(event)
@@ -203,8 +204,11 @@ class AISWorker(pytak.QueueWorker):
         self.feed_url = self.config.get("AISHUB_URL")
         if self.feed_url:
             warnings.warn(
-                ("DEPRECATED: AISHUB_URL configuration parameter detected, "
-                "please use FEED_URL."))
+                (
+                    "DEPRECATED: AISHUB_URL configuration parameter detected, "
+                    "please use FEED_URL."
+                )
+            )
         else:
             self.feed_url = self.config.get("FEED_URL")
 
@@ -213,7 +217,7 @@ class AISWorker(pytak.QueueWorker):
         else:
             await self.network_rx()
 
-    async def network_rx(self):
+    async def network_rx(self) -> None:
         """Start a network receiver."""
         port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
         host: str = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)
@@ -222,22 +226,20 @@ class AISWorker(pytak.QueueWorker):
         ready = asyncio.Event()
         self._logger.info("Listening for AIS on %s:%s", host, port)
         await loop.create_datagram_endpoint(
-                lambda: AISNetworkClient(ready, self.queue, self.config),
-                local_addr=(host, port),
-            )
+            lambda: AISNetworkClient(ready, self.queue, self.config),
+            local_addr=(host, port),
+        )
         await ready.wait()
         while 1:
             await asyncio.sleep(0.01)
 
-    async def poll_feed(self):
+    async def poll_feed(self) -> None:
         """Poll the data source feed."""
         poll_interval: int = int(
-                self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL)
-            )
+            self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL)
+        )
         async with aiohttp.ClientSession() as self.session:
             while 1:
                 await asyncio.sleep(poll_interval)
-                self._logger.info(
-                        "Polling every %ss: %s", poll_interval, self.feed_url
-                    )
+                self._logger.info("Polling every %ss: %s", poll_interval, self.feed_url)
                 await self.get_feed()

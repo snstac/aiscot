@@ -60,6 +60,3 @@ DEFAULT_COT_STALE: str = "3600"  # 1 hour
 DEFAULT_COT_TYPE: str = "a-u-S-X-M"
 
 DEFAULT_POLL_INTERVAL: int = 61
-
-
-DEFAULT_SHIP_DB_FILE = find(__name__, "data/yadd_mmsi_ship_2023-02-11-001541.txt")

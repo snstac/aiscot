@@ -1,9 +1,6 @@
-.. image:: https://raw.githubusercontent.com/snstac/aiscot/main/docs/screenshot_1676076870_2962.png
-   :alt: Screenshot of ships in ATAK, via.
-   :target: https://raw.githubusercontent.com/snstac/aiscot/main/docs/screenshot_1676076870_2962.png
+![Screenshot of ships in ATAK, via AISCOT.](screenshot_1676076870_2962.png)
 
-Display Ships in TAK - AIS to TAK Gateway 
-*****************************************
+# Display Ships in TAK - AIS to TAK Gateway 
 
 AISCOT is software for monitoring and analyzing maritime surveillance data within the 
 Team Awareness KIT (TAK) suite of products.
@@ -22,12 +19,11 @@ ttitude, type, track, bearing, speed, callsign and more.
 AISCOT was original developed to support an open ocean boat race in the Northern 
 Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
 
-`Documentation is available here. <https://aiscot.rtfd.io/>_`
+[Documentation is available here.](https://aiscot.rtfd.io)
 
-> Want a turn-key AIS to TAK Gateway? Check out `AryaSEA <https://www.snstac.com/aryasea>_`.
+> Want a turn-key AIS to TAK Gateway? Check out [AryaSEA](https://www.snstac.com/aryasea).
 
-License & Copyright
-===================
+# License & Copyright
 
 Copyright Sensors & Signals LLC https://www.snstac.com
 

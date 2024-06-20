@@ -20,7 +20,15 @@
 
 import pytest
 
-from aiscot.ais_functions import get_aton, get_mid, get_known_craft, get_sar, get_crs, get_shipname
+import aiscot
+from aiscot.ais_functions import (
+    get_aton,
+    get_mid,
+    get_known_craft,
+    get_sar,
+    get_crs,
+    get_shipname,
+)
 
 
 __author__ = "Greg Albrecht <oss@undef.net>"
@@ -147,4 +155,3 @@ def test_get_shipname():
     """Test getting shipname from db using `get_shipname()`."""
     assert get_shipname("303990000") == "USCG EAGLE"
     assert get_shipname("938852000") == ""
-    

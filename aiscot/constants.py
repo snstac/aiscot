@@ -46,16 +46,11 @@ DEFAULT_COT_TYPE: str = "a-u-S-X-M"
 
 DEFAULT_POLL_INTERVAL: int = 61
 
-DEFAULT_MID_DB_FILE = os.getenv(
-    "MID_DB_FILE",
-    pkg_resources.resource_filename(
-        __name__,
-        "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv",
-    ),
+DEFAULT_MID_DB_FILE = pkg_resources.resource_filename(
+    __name__,
+    "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv",
 )
-DEFAULT_SHIP_DB_FILE = os.getenv(
-    "SHIP_DB_FILE",
-    pkg_resources.resource_filename(
-        __name__, "data/yadd_mmsi_ship_2023-02-11-001541.txt"
-    ),
+
+DEFAULT_SHIP_DB_FILE = pkg_resources.resource_filename(
+    __name__, "data/yadd_mmsi_ship_2023-02-11-001541.txt"
 )

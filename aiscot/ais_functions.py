@@ -63,8 +63,9 @@ def get_known_craft(csv_file: str) -> list:
     return all_rows
 
 
-def read_mid_db_file(csv_file: str = aiscot.DEFAULT_MID_DB_FILE) -> dict:
+def read_mid_db_file(csv_file: str = "") -> dict:
     """Read the MID_DB_FILE file into a `dict`."""
+    csv_file = csv_file or aiscot.DEFAULT_MID_DB_FILE
     mid_digits: list = []
     mid_allocated_to: list = []
 
@@ -77,8 +78,9 @@ def read_mid_db_file(csv_file: str = aiscot.DEFAULT_MID_DB_FILE) -> dict:
     return dict(zip(mid_digits, mid_allocated_to))
 
 
-def read_ship_db_file(csv_file: str = aiscot.DEFAULT_SHIP_DB_FILE) -> list:
+def read_ship_db_file(csv_file: str = "") -> list:
     """Read the SHIP_DB_FILE file into a `list`."""
+    csv_file = csv_file or aiscot.DEFAULT_SHIP_DB_FILE
     all_rows: list = []
     fields: list = ["MMSI", "name", "unk", "vtype"]
     with open(csv_file, "r", encoding="ISO-8859-1") as csv_fd:

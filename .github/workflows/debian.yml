@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Install Debian Package Building Dependencies
-        run: bash debian/install_pkg_build_deps.sh
+        run: sudo bash debian/install_pkg_build_deps.sh
 
       - name: Create Debian Package
         run: make clean package

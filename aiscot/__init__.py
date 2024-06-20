@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-"""AISCOT: AIS to TAK Gateway - Display Ships in TAK."""
+"""AISCOT: Display Ships in TAK - AIS to TAK Gateway"""
 
 __version__ = "6.0.0-beta1"
 
@@ -40,8 +40,7 @@ try:
     from .ais_functions import get_known_craft
 
     from .classes import AISWorker
-except ImportError as exc:
+except ImportError:
     import warnings
 
-    warnings.warn(str(exc))
-    warnings.warn("Ignoring ImportError - Python 3.6 compat work-around.")
+    warnings.warn("COMPAT: Python 3.6. Ignoring ImportError.")

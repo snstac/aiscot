@@ -22,10 +22,21 @@
 import logging
 import os
 
+_DEFAULT_MID_DB_FILE = (
+    "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv"
+)
+_DEFAULT_SHIP_DB_FILE = "data/yadd_mmsi_ship_2023-02-11-001541.txt"
+
 try:
-    from pkg_resources import resource_filename as find
+    from pkg_resources import resource_filename
+
+    DEFAULT_MID_DB_FILE = resource_filename(__name__, _DEFAULT_MID_DB_FILE)
+    DEFAULT_SHIP_DB_FILE = resource_filename(__name__, _DEFAULT_SHIP_DB_FILE)
 except ImportError:
-    from importlib.resources import files as find
+    from importlib.resources import files
+
+    DEFAULT_MID_DB_FILE = files("aiscot.data").joinpath(_DEFAULT_MID_DB_FILE).name
+    DEFAULT_SHIP_DB_FILE = files("aiscot.data").joinpath(_DEFAULT_SHIP_DB_FILE).name
 
 
 if bool(os.environ.get("DEBUG")):
@@ -50,9 +61,5 @@ DEFAULT_COT_TYPE: str = "a-u-S-X-M"
 
 DEFAULT_POLL_INTERVAL: int = 61
 
-DEFAULT_MID_DB_FILE = find(
-    __name__,
-    "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv",
-)
 
 DEFAULT_SHIP_DB_FILE = find(__name__, "data/yadd_mmsi_ship_2023-02-11-001541.txt")

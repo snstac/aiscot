@@ -1,4 +1,4 @@
-![Screenshot of ships in ATAK, via AISCOT.](screenshot_1676076870_2962.png)
+![Screenshot of ships in ATAK, via AISCOT.](https://aiscot.readthedocs.io/en/latest/screenshot_1676076870_2962.png)
 
 # Display Ships in TAK - AIS to TAK Gateway 
 

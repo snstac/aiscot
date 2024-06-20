@@ -1,4 +1,4 @@
-site_name: AISCOT - Display Marine Vessels in TAK
+site_name: AISCOT: Display Ships in TAK - AIS to TAK Gateway
 site_url: https://aiscot.rtfd.io/
 repo_url: https://github.com/snstac/aiscot/
 site_description: Software for monitoring and analyzing maritime surveillance data via the Team Awareness Kit (TAK) ecosystem of products.

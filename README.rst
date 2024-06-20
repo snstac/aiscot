@@ -1,26 +1,30 @@
-AISCOT: Display Ships in TAK - AIS to TAK Gateway 
-*************************************************
+.. image:: https://raw.githubusercontent.com/snstac/aiscot/main/docs/screenshot_1676076870_2962.png
+   :alt: Screenshot of ships in ATAK, via.
+   :target: https://raw.githubusercontent.com/snstac/aiscot/main/docs/screenshot_1676076870_2962.png
 
-.. image:: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
-   :alt: Screenshot of ships in ATAK.
-   :target: https://raw.githubusercontent.com/ampledata/aiscot/main/docs/screenshot_1676076870_2962.png
+Display Ships in TAK - AIS to TAK Gateway 
+*****************************************
 
-Description
-===========
+AISCOT is software for monitoring and analyzing maritime surveillance data within the 
+Team Awareness KIT (TAK) suite of products.
 
-AISCOT 
-The Automatic Identification System to Cursor on Target gateway (AISCOT) transforms 
-automatic identification system (AIS) to Cursor on Target (CoT) for use with TAK 
-products such as ATAK, WinTAK & iTAK. Vessels sending AIS either 
-over the air (RF), through a local networks (NMEA), or through internet aggregators 
-(AISHUB), will be displayed in TAK with appropriate icons, attitude, type, track, 
-bearing, speed, callsign and more.
+AISCOT captures and reports real-time automatic identification system (AIS) data 
+received from vessels (or other maritime objects) into TAK Products using native TAK 
+protocols, including Cursor on Target (CoT).
 
-For more information the TAK Product suite, see: https://ww.tak.gov
+AISCOT has been evaluated with ATAK, WinTAK, iTAK, TAK Server & TAKX, and is know to 
+work with other situational awareness (SA) software.
+
+AISCOT supports over-the-air radio (RF) AIS transmissions, local NMEA, and Internet 
+AIS aggregators (like AISHUB). AIS data is displayed in TAK with appropriate icons, a
+ttitude, type, track, bearing, speed, callsign and more.
 
 AISCOT was original developed to support an open ocean boat race in the Northern 
 Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
 
+`Documentation is available here. <https://aiscot.rtfd.io/>_`
+
+> Want a turn-key AIS to TAK Gateway? Check out `AryaSEA <https://www.snstac.com/aryasea>_`.
 
 License & Copyright
 ===================

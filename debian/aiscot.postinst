@@ -19,7 +19,7 @@
 echo "AISCOT Post Install"
 
 # shellcheck source=aiscot.conf
-[ -f "/etc/default/python3-aiscot" ] && . /etc/default/python3-aiscot
+[ -f "/etc/default/aiscot" ] && . /etc/default/aiscot
 
 # Sane defaults:
 [ -z "$SERVER_HOME" ] && SERVER_HOME=/run/aiscot
@@ -70,10 +70,10 @@ then
     fi
 fi
 
-systemctl enable python3-aiscot.service
+systemctl enable aiscot.service
 
 echo "aiscot has been installed."
-echo "Configure: sudo nano /etc/default/python3-aiscot"
-echo "Start: sudo systemctl start python3-aiscot.service"
+echo "Configure: sudo nano /etc/default/aiscot"
+echo "Start: sudo systemctl start aiscot.service"
 
 exit 0

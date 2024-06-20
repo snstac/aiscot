@@ -47,7 +47,7 @@ clean:
 	@rm -rf *.egg* build dist *.py[oc] */*.py[co] cover doctest_pypi.cfg \
 		nosetests.xml pylint.log output.xml flake8.log tests.log \
 		test-result.xml htmlcov fab.log .coverage __pycache__ \
-		*/__pycache__ deb_dist
+		*/__pycache__ deb_dist .mypy_cache
 
 pep8:
 	flake8 --max-line-length=88 --extend-ignore=E203 --exit-zero $(REPO_NAME)/*.py
@@ -85,28 +85,16 @@ deb_dist:
 	python3 setup.py --command-packages=stdeb.command sdist_dsc
 
 deb_custom:
-# echo "# START Makefile customization " >> $(wildcard deb_dist/*/debian)/rules
-# echo "override_dh_installsystemd:" >> $(wildcard deb_dist/*/debian)/rules
-# echo "	dh_installsystemd --name=$(REPO_NAME)" >> $(wildcard deb_dist/*/debian)/rules
-# echo "override_dh_installinit:" >> $(wildcard deb_dist/*/debian)/rules
-# echo "	dh_installinit --name=$(REPO_NAME)" >> $(wildcard deb_dist/*/debian)/rules
-# echo "# END Makefile customization" >> $(wildcard deb_dist/*/debian)/rules
-	cp debian/$(REPO_NAME).conf $(wildcard deb_dist/*/debian)/python3-$(REPO_NAME).default
-	cp debian/$(REPO_NAME).postinst $(wildcard deb_dist/*/debian)/python3-$(REPO_NAME).postinst
-	cp debian/$(REPO_NAME).service $(wildcard deb_dist/*/debian)/python3-$(REPO_NAME).service
-
-# ifneq ("$(postinst)", "")
-# 	cp $(postinst) $(wildcard deb_dist/*/debian)/python3-$(REPO_NAME).postinst
-# endif
-# ifneq ("$(service)", "")
-# 	cp $(service) $(wildcard deb_dist/*/debian)/python3-$(REPO_NAME).service
-# endif
+	cp debian/$(REPO_NAME).conf $(wildcard deb_dist/*/debian)/$(REPO_NAME).default
+	cp debian/$(REPO_NAME).postinst $(wildcard deb_dist/*/debian)/$(REPO_NAME).postinst
+	cp debian/$(REPO_NAME).service $(wildcard deb_dist/*/debian)/$(REPO_NAME).service
 
 bdist_deb: deb_dist deb_custom
 	cd deb_dist/$(REPO_NAME)-*/ && dpkg-buildpackage -rfakeroot -uc -us
 	
 faux_latest:
-	cp deb_dist/python3-$(REPO_NAME)_*-1_all.deb deb_dist/python3-$(REPO_NAME)_latest_all.deb
+	cp deb_dist/$(REPO_NAME)_*-1_all.deb deb_dist/$(REPO_NAME)_latest_all.deb
+	cp deb_dist/$(REPO_NAME)_*-1_all.deb deb_dist/python3-$(REPO_NAME)_latest_all.deb
 
 package: bdist_deb faux_latest
 

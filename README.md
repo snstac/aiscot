@@ -23,7 +23,7 @@ Pacific Ocean, as described in this article: http://ampledata.org/boat_race_supp
 
 > Want a turn-key AIS to TAK Gateway? Check out [AryaSEA](https://www.snstac.com/aryasea).
 
-# License & Copyright
+## License & Copyright
 
 Copyright Sensors & Signals LLC https://www.snstac.com
 

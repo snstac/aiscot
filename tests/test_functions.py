@@ -23,8 +23,9 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from aiscot.functions import ais_to_cot, ais_to_cot_xml
 from aiscot.ais_functions import read_known_craft_fd
+from aiscot.constants import DEFAULT_MID_DB_FILE, DEFAULT_SHIP_DB_FILE
+from aiscot.functions import ais_to_cot, ais_to_cot_xml
 
 
 __author__ = "Greg Albrecht <oss@undef.net>"
@@ -186,21 +187,36 @@ def test_ais_to_cot_xml_with_known_craft(sample_data_pyAISm, sample_known_craft)
 
 def test_ais_to_cot_xml_none():
     """Test that `ais_to_cot_xml()` only renders valid input data."""
-    assert ais_to_cot_xml({
-        "mmsi": 366892000,
-        "lon": 0,
-        "lat": 37.81691333333333,
-    }) is None
-    assert ais_to_cot_xml({
-        "mmsi": 366892000,
-        "lon": -122.51208,
-        "lat": 0,
-    }) is None
-    assert ais_to_cot_xml({
-        "mmsi": "",
-        "lon": -122.51208,
-        "lat": 37.81691333333333,
-    }) is None
+    assert (
+        ais_to_cot_xml(
+            {
+                "mmsi": 366892000,
+                "lon": 0,
+                "lat": 37.81691333333333,
+            }
+        )
+        is None
+    )
+    assert (
+        ais_to_cot_xml(
+            {
+                "mmsi": 366892000,
+                "lon": -122.51208,
+                "lat": 0,
+            }
+        )
+        is None
+    )
+    assert (
+        ais_to_cot_xml(
+            {
+                "mmsi": "",
+                "lon": -122.51208,
+                "lat": 37.81691333333333,
+            }
+        )
+        is None
+    )
     assert ais_to_cot_xml({}) is None
 
 

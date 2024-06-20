@@ -35,9 +35,8 @@ try:
 except ImportError:
     from importlib.resources import files
 
-    DEFAULT_MID_DB_FILE = files("aiscot").joinpath(_DEFAULT_MID_DB_FILE).name
-    DEFAULT_SHIP_DB_FILE = files("aiscot").joinpath(_DEFAULT_SHIP_DB_FILE).name
-
+    DEFAULT_MID_DB_FILE = str(files("aiscot").joinpath(_DEFAULT_MID_DB_FILE))
+    DEFAULT_SHIP_DB_FILE = str(files("aiscot").joinpath(_DEFAULT_SHIP_DB_FILE))
 
 if bool(os.environ.get("DEBUG")):
     LOG_LEVEL = logging.DEBUG

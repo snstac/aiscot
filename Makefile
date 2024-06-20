@@ -27,10 +27,10 @@ develop:
 	python3 setup.py develop
 
 editable:
-	python3 -m pip install -e . --break-system-packages 
+	python3 -m pip install -e .
 
 install_test_requirements:
-	python3 -m pip install -r requirements_test.txt --break-system-packages 
+	python3 -m pip install -r requirements_test.txt 
 
 install:
 	python3 setup.py install

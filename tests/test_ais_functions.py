@@ -20,7 +20,8 @@
 
 import pytest
 
-import aiscot
+from aiscot.constants import DEFAULT_MID_DB_FILE, DEFAULT_SHIP_DB_FILE
+
 from aiscot.ais_functions import (
     get_aton,
     get_mid,

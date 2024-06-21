@@ -52,4 +52,4 @@ AISCOT has the following built-in configuration parameters:
 
     Ignore AIS from Aids to Naviation (buoys, etc).
 
-Additional configuration parameters, including TAK Server configuration, are included in the [PyTAK Configuration](https://pytak.readthedocs.io/en/stable/configuration/) documentation.
+Additional configuration parameters, including TLS & TAK Server configuration, are included in the [PyTAK Configuration](https://pytak.readthedocs.io/en/stable/configuration/) documentation.

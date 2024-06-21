@@ -1,4 +1,4 @@
-![Screenshot of ships in ATAK, via AISCOT.](https://aiscot.readthedocs.io/en/latest/screenshot_1676076870_2962.png)
+![Screenshot of ships in ATAK, via AISCOT.](https://aiscot.readthedocs.io/en/latest/media/aiscot_screenshot_tak_logo.png)
 
 # Display Ships in TAK - AIS to TAK Gateway 
 
@@ -13,15 +13,13 @@ AISCOT has been evaluated with ATAK, WinTAK, iTAK, TAK Server & TAKX, and is kno
 work with other situational awareness (SA) software.
 
 AISCOT supports over-the-air radio (RF) AIS transmissions, local NMEA, and Internet 
-AIS aggregators (like AISHUB). AIS data is displayed in TAK with appropriate icons, a
-ttitude, type, track, bearing, speed, callsign and more.
+AIS aggregators (like AISHUB). AIS data is displayed in TAK with appropriate icons, 
+attitude, type, track, bearing, speed, callsign and more.
 
-AISCOT was original developed to support an open ocean boat race in the Northern 
-Pacific Ocean, as described in this article: http://ampledata.org/boat_race_support.html
+AISCOT was original developed to support an [open ocean boat race in the Northern 
+Pacific Ocean](http://ampledata.org/boat_race_support.html).
 
-[Documentation is available here.](https://aiscot.rtfd.io)
-
-> Want a turn-key AIS to TAK Gateway? Check out [AryaSEA](https://www.snstac.com/aryasea).
+[AISCOT documentation is available here.](https://aiscot.rtfd.io)
 
 ## License & Copyright
 

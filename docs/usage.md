@@ -58,7 +58,7 @@ For example, the following Bound Box paints a large swath around Northern Califo
 4. Start AISCOT: `sudo systemctl start aiscot`
 
 ```ini
-{!debian/aiscot.service}
+{!debian/aiscot.service!}
 ```
 
 

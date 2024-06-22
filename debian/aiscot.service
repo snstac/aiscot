@@ -16,14 +16,14 @@
 #
 
 [Unit]
-Description=AISCOT: AIS to TAK Gateway - Display Ships in TAK
+Description=AISCOT: Display Ships in TAK - AIS to TAK Gateway.
 Documentation=https://github.com/snstac/aiscot
 Wants=network.target
 After=network.target
 
 [Service]
 User=aiscot
-ExecStart=/usr/local/bin/aiscot
+ExecStart=/usr/bin/aiscot
 RuntimeDirectory=aiscot
 SyslogIdentifier=aiscot
 EnvironmentFile=/etc/default/aiscot

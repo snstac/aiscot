@@ -72,8 +72,10 @@ fi
 
 systemctl enable aiscot.service
 
-echo "aiscot has been installed."
-echo "Configure: sudo nano /etc/default/aiscot"
-echo "Start: sudo systemctl start aiscot.service"
+echo "---- AISCOT Install Complete ----"
+echo "Documentation: https://aiscot.rtfd.io/"
+echo "Configure aiscot: sudo nano /etc/default/aiscot"
+echo "Start aiscot: sudo systemctl start aiscot.service"
+echo "Logs: sudo journalctl -fu aiscot"
 
 exit 0

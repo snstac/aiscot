@@ -37,6 +37,11 @@ AISCOT has the following built-in configuration parameters:
     
     Override COT Event Type ("marker type").
 
+* **`COT_ICON`**:
+    * Default:
+
+    Set a custom user icon / custom marker icon in TAK. Contains a Data Package UUID and resource name (file name).
+
 * **`KNOWN_CRAFT`**:
     * Default: unset
 

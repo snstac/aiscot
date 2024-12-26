@@ -79,9 +79,14 @@ def ais_to_cot_xml(
     config = config or {}
     remarks_fields: list = []
 
-    lat: float = float(craft.get("lat", craft.get("LATITUDE", "0")))
-    lon: float = float(craft.get("lon", craft.get("LONGITUDE", "0")))
+    lat: float = float(
+        craft.get("lat", craft.get("LATITUDE", craft.get("latitude", "0")))
+    )
+    lon: float = float(
+        craft.get("lon", craft.get("LONGITUDE", craft.get("longitude", "0")))
+    )
     mmsi: str = str(craft.get("mmsi", craft.get("MMSI", "")))
+
     # At least these three must exist, but may have different names depending on the
     # AIS source:
     if not all([lat, lon, mmsi]):
@@ -113,7 +118,9 @@ def ais_to_cot_xml(
         str(craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
     )
     shipname: str = str(craft.get("shipname", aisfunc.get_shipname(mmsi)))
-    vessel_type: str = str(craft.get("type", craft.get("TYPE", "")))
+    vessel_type: str = str(
+        craft.get("type", craft.get("TYPE", craft.get("veselType", "")))
+    )
 
     cot_icon = config.get("COT_ICON")
 
@@ -185,7 +192,7 @@ def ais_to_cot_xml(
     # AIS Speed over ground: 0.1-knot (0.19 km/h) resolution from
     #                    0 to 102 knots (189 km/h)
     # COT Speed is meters/second
-    sog: Optional[float] = craft.get("speed", craft.get("SPEED"))
+    sog: Optional[float] = craft.get("speed", craft.get("SPEED", craft.get("SOG", "0")))
     if sog:
         sog = float(sog) * 0.1 / 1.944
     if sog and sog != 0.0:

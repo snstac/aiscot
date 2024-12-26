@@ -23,10 +23,6 @@ from typing import TextIO
 
 import aiscot
 
-__author__ = "Greg Albrecht <gba@snstac.com>"
-__copyright__ = "Copyright 2023 Sensors & Signals LLC"
-__license__ = "Apache License, Version 2.0"
-
 
 def read_known_craft_fd(csv_fd: TextIO) -> list:
     """Split a CSV file into an iterable key=value store.

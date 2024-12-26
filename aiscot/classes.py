@@ -35,7 +35,7 @@ import aiscot.pyAISm
 
 # pylint: disable=too-many-instance-attributes
 class AISNetworkClient(asyncio.Protocol):
-    """Class for handling connections from network AIS feed."""
+    """Network AIS feed client (receiver)."""
 
     _logger = logging.getLogger(__name__)
     if not _logger.handlers:
@@ -126,7 +126,7 @@ class AISNetworkClient(asyncio.Protocol):
 
 
 class AISWorker(pytak.QueueWorker):
-    """AIS Cursor-on-Target Class."""
+    """AIS to TAK worker."""
 
     def __init__(self, queue: asyncio.Queue, config: ConfigParser) -> None:
         """Initialize an instance of this class."""
@@ -137,12 +137,12 @@ class AISWorker(pytak.QueueWorker):
         self.feed_url: Optional[str] = None
 
     async def handle_data(self, data) -> None:
-        """Handle received MMSI data."""
+        """Handle received data."""
         # self._logger.info("Received AIS: '%s'", msg)
         mmsi: str = ""
 
         for msg in data:
-            mmsi = str(msg.get("MMSI", ""))
+            mmsi = str(msg.get("MMSI", msg.get("mmsi", "")))
             if not mmsi:
                 continue
 
@@ -178,19 +178,37 @@ class AISWorker(pytak.QueueWorker):
     async def get_feed(self) -> None:
         """Get AIS data from AISHub feed."""
         if not self.session:
-            return
-        response = await self.session.request(method="GET", url=self.feed_url)
-        response.raise_for_status()
-        json_resp = await response.json()
+            raise ValueError("No session available.")
+        if not self.feed_url:
+            raise ValueError("Feed URL is not set.")
 
-        api_report = json_resp[0]
-        if api_report.get("ERROR"):
-            self._logger.error("AISHub.com API returned an error: ")
-            self._logger.error(api_report)
+        if "seavision" in self.feed_url:
+            self._logger.info("Using SeaVision API")
+            headers = {
+                "x-api-key": self.config.get("SEAVISION_API_KEY"),
+                "accept": "application/json",
+            }
+            response = await self.session.request(
+                method="GET", url=self.feed_url, headers=headers
+            )
+            response.raise_for_status()
+            json_resp = await response.json()
+            if json_resp:
+                self._logger.debug("Retrieved %s ships", len(json_resp))
+                await self.handle_data(json_resp)
         else:
-            ships = json_resp[1]
-            self._logger.debug("Retrieved %s ships", len(ships))
-            await self.handle_data(ships)
+            response = await self.session.request(method="GET", url=self.feed_url)
+            response.raise_for_status()
+            json_resp = await response.json()
+
+            api_report = json_resp[0]
+            if api_report.get("ERROR"):
+                self._logger.error("AISHub.com API returned an error: ")
+                self._logger.error(api_report)
+            else:
+                ships = json_resp[1]
+                self._logger.debug("Retrieved %s ships", len(ships))
+                await self.handle_data(ships)
 
     async def run(self, number_of_iterations=-1) -> None:
         """Run this Thread, reads AIS & outputs CoT."""
@@ -201,17 +219,8 @@ class AISWorker(pytak.QueueWorker):
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
             self.known_craft_db = aiscot.get_known_craft(known_craft)
 
-        self.feed_url = self.config.get("AISHUB_URL")
-        if self.feed_url:
-            warnings.warn(
-                (
-                    "DEPRECATED: AISHUB_URL configuration parameter detected, "
-                    "please use FEED_URL."
-                )
-            )
-        else:
-            self.feed_url = self.config.get("FEED_URL")
-
+        self.feed_url = self.config.get("FEED_URL")
+        self._logger.info("Using FEED_URL: %s", self.feed_url)
         if self.feed_url:
             await self.poll_feed()
         else:
@@ -240,6 +249,6 @@ class AISWorker(pytak.QueueWorker):
         )
         async with aiohttp.ClientSession() as self.session:
             while 1:
-                await asyncio.sleep(poll_interval)
                 self._logger.info("Polling every %ss: %s", poll_interval, self.feed_url)
                 await self.get_feed()
+                await asyncio.sleep(poll_interval)

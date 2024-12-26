@@ -19,28 +19,23 @@
 
 """AISCOT: Display Ships in TAK - AIS to TAK Gateway"""
 
-__version__ = "6.0.0-beta6"
+__version__ = "6.1.0"
 
-# Python 3.6 test/build work-around:
-try:
-    from .constants import (
-        LOG_FORMAT,
-        LOG_LEVEL,
-        DEFAULT_LISTEN_PORT,
-        DEFAULT_LISTEN_HOST,
-        DEFAULT_COT_TYPE,
-        DEFAULT_COT_STALE,
-        DEFAULT_POLL_INTERVAL,
-        DEFAULT_MID_DB_FILE,
-        DEFAULT_SHIP_DB_FILE,
-    )
 
-    from .functions import ais_to_cot, create_tasks
+from .constants import (
+    LOG_FORMAT,
+    LOG_LEVEL,
+    DEFAULT_LISTEN_PORT,
+    DEFAULT_LISTEN_HOST,
+    DEFAULT_COT_TYPE,
+    DEFAULT_COT_STALE,
+    DEFAULT_POLL_INTERVAL,
+    DEFAULT_MID_DB_FILE,
+    DEFAULT_SHIP_DB_FILE,
+)
 
-    from .ais_functions import get_known_craft
+from .functions import ais_to_cot, create_tasks
 
-    from .classes import AISWorker
-except ImportError:
-    import warnings
+from .ais_functions import get_known_craft
 
-    warnings.warn("COMPAT: Python 3.6. Ignoring ImportError.")
+from .classes import AISWorker

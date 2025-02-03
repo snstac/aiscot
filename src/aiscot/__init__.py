@@ -17,30 +17,20 @@
 # limitations under the License.
 #
 
-"""AISCOT: Display Ships in TAK - AIS to TAK Gateway"""
+"""Display Ships in TAK - AIS to TAK Gateway."""
 
-__version__ = "6.0.0-beta6"
+from .constants import (  # NOQA
+    DEFAULT_LISTEN_PORT,
+    DEFAULT_LISTEN_HOST,
+    DEFAULT_COT_TYPE,
+    DEFAULT_COT_STALE,
+    DEFAULT_POLL_INTERVAL,
+    DEFAULT_MID_DB_FILE,
+    DEFAULT_SHIP_DB_FILE,
+)
 
-# Python 3.6 test/build work-around:
-try:
-    from .constants import (
-        LOG_FORMAT,
-        LOG_LEVEL,
-        DEFAULT_LISTEN_PORT,
-        DEFAULT_LISTEN_HOST,
-        DEFAULT_COT_TYPE,
-        DEFAULT_COT_STALE,
-        DEFAULT_POLL_INTERVAL,
-        DEFAULT_MID_DB_FILE,
-        DEFAULT_SHIP_DB_FILE,
-    )
+from .functions import create_tasks, cot_to_xml  # NOQA
 
-    from .functions import ais_to_cot, create_tasks
+from .ais_functions import get_known_craft  # NOQA
 
-    from .ais_functions import get_known_craft
-
-    from .classes import AISWorker
-except ImportError:
-    import warnings
-
-    warnings.warn("COMPAT: Python 3.6. Ignoring ImportError.")
+from .classes import AISWorker  # NOQA

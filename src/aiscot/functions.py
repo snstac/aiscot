@@ -19,18 +19,26 @@
 
 """AISCOT functions for parsing AIS and generating Cursor on Target."""
 
+import os
+import logging
 import xml.etree.ElementTree as ET
 
 from configparser import SectionProxy
-from typing import Optional, Union
+from typing import Optional, Set, Union
 from xml.etree.ElementTree import tostring, Element
 
 import pytak
 import aiscot
 import aiscot.ais_functions as aisfunc
 
+APP_NAME = "aiscot"
+Logger = logging.getLogger(__name__)
+Debug = bool(os.getenv("DEBUG", False))
 
-def create_tasks(config: Union[dict, SectionProxy], clitool: pytak.CLITool) -> set:
+
+def create_tasks(
+    config: Union[dict, SectionProxy], clitool: pytak.CLITool
+) -> Set[pytak.Worker,]:
     """Bootstrap a set of coroutine tasks for a PyTAK application.
 
     Bootstrapped tasks:
@@ -56,7 +64,7 @@ def create_tasks(config: Union[dict, SectionProxy], clitool: pytak.CLITool) -> s
 
 
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-def ais_to_cot_xml(
+def ais_to_cot(
     craft: dict,
     config: Union[dict, SectionProxy, None] = None,
     known_craft: Optional[dict] = None,
@@ -89,12 +97,15 @@ def ais_to_cot_xml(
 
     # At least these three must exist, but may have different names depending on the
     # AIS source:
+    Logger.debug(f"lat={lat} lon={lon} mmsi={mmsi}")
     if not all([lat, lon, mmsi]):
+        Logger.error("Missing lat, lon, or mmsi.")
         return None
 
     aton: bool = aisfunc.get_aton(mmsi)
     # If IGNORE_ATON is set and this is an Aid to Naviation, we'll ignore it.
     if aton and config.get("IGNORE_ATON"):
+        Logger.debug(f"Ignoring AtoN: {mmsi}")
         return None
 
     uid: str = f"MMSI-{mmsi}"
@@ -111,8 +122,8 @@ def ais_to_cot_xml(
 
     cot_host_id: str = str(config.get("COT_HOST_ID") or "")
 
-    aiscotx: Element = Element("_aiscot_")
-    aiscotx.set("cot_host_id", cot_host_id)
+    xais: Element = Element("__ais")
+    xais.set("cot_host_id", cot_host_id)
 
     ais_name: str = (
         str(craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
@@ -126,12 +137,12 @@ def ais_to_cot_xml(
 
     if ais_name:
         remarks_fields.append(f"AIS Name: {ais_name}")
-        aiscotx.set("ais_name", ais_name)
+        xais.set("ais_name", ais_name)
 
     if shipname:
         ais_name = shipname
         remarks_fields.append(f"Shipname: {shipname}")
-        aiscotx.set("shipname", shipname)
+        xais.set("shipname", shipname)
 
     _name = known_craft.get("NAME") or ais_name
     if _name:
@@ -143,20 +154,20 @@ def ais_to_cot_xml(
     if country:
         cot_type = "a-n" + cot_type[3:]
         remarks_fields.append(f"Country: {country}")
-        aiscotx.set("country", country)
+        xais.set("country", country)
         if "United States of America" in country:
             cot_type = "a-f" + cot_type[3:]
 
     if vessel_type:
         ais_name = shipname
         remarks_fields.append(f"Type: {vessel_type}")
-        aiscotx.set("type", str(vessel_type))
+        xais.set("vessel_type", str(vessel_type))
 
     if mmsi:
         remarks_fields.append(f"MMSI: {mmsi}")
-        aiscotx.set("mmsi", str(mmsi))
+        xais.set("mmsi", str(mmsi))
 
-    aiscotx.set("aton", str(aton))
+    xais.set("aton", str(aton))
     if aton:
         cot_type = "a-n-S-N"
         cot_stale = 86400  # 1 Day
@@ -164,25 +175,18 @@ def ais_to_cot_xml(
         remarks_fields.append(f"AtoN: {aton}")
 
     uscg: bool = aisfunc.get_sar(mmsi)
-    aiscotx.set("uscg", str(uscg))
+    xais.set("uscg", str(uscg))
     if uscg:
         cot_type = "a-f-S-X-L"
         remarks_fields.append(f"USCG: {uscg}")
 
     crs: bool = aisfunc.get_crs(mmsi)
-    aiscotx.set("crs", str(crs))
+    xais.set("crs", str(crs))
     if crs:
         cot_type = "a-f-G-I-U-T"
         cot_stale = 86400  # 1 Day
         callsign = f"USCG CRS {callsign}"
         remarks_fields.append(f"USCG CRS: {crs}")
-
-    point = Element("point")
-    point.set("lat", str(lat))
-    point.set("lon", str(lon))
-    point.set("hae", "9999999.0")
-    point.set("le", "9999999.0")
-    point.set("ce", "9999999.0")
 
     track = Element("track")
     heading: Optional[float] = craft.get("heading", craft.get("HEADING"))
@@ -211,42 +215,47 @@ def ais_to_cot_xml(
     detail.append(track)
     detail.append(contact)
     detail.append(remarks)
+    detail.append(xais)
 
     if cot_icon:
         usericon = ET.Element("usericon")
         usericon.set("iconsetpath", cot_icon)
         detail.append(usericon)
 
-    root = Element("event")
-    root.set("version", "2.0")
-    root.set("type", cot_type)
-    root.set("uid", uid)
-    root.set("how", "m-g")
-    root.set("time", pytak.cot_time())
-    root.set("start", pytak.cot_time())
-    root.set("stale", pytak.cot_time(cot_stale))
+    cot_d = {
+        "lat": str(lat),
+        "lon": str(lon),
+        "ce": "9999999.0",
+        "le": "9999999.0",
+        "hae": "0.0",
+        "uid": uid,
+        "cot_type": cot_type,
+        "stale": cot_stale,
+    }
+    cot = pytak.gen_cot_xml(**cot_d)
+    cot.set("access", config.get("COT_ACCESS", pytak.DEFAULT_COT_ACCESS))
 
-    root.append(point)
-    root.append(detail)
-    root.append(aiscotx)
+    _detail = cot.findall("detail")[0]
+    flowtags = _detail.findall("_flow-tags_")
+    detail.extend(flowtags)
+    cot.remove(_detail)
+    cot.append(detail)
 
-    return root
+    return cot
 
 
-def ais_to_cot(
-    craft: dict,
-    config: Union[dict, SectionProxy, None] = None,
+def cot_to_xml(
+    data: dict,
+    config: Union[SectionProxy, dict, None] = None,
     known_craft: Optional[dict] = None,
+    func=None,
 ) -> Optional[bytes]:
-    """Convert AIS to CoT XML and return it as 'TAK Protocol, Version 0'.
-
-    'TAK Protocol, Version 0' being:
-     1. XML Declaration.
-     2. Newline.
-     3. Cursor on Target <event/> Element.
-     4. Newline.
-    """
-    cot: Optional[Element] = ais_to_cot_xml(craft, config, known_craft)
-    return (
-        b"\n".join([pytak.DEFAULT_XML_DECLARATION, tostring(cot), b""]) if cot else None
+    """Return a CoT XML object as an XML string, using the given func."""
+    func = func or "ais_to_cot"
+    cot: Optional[ET.Element] = getattr(aiscot.functions, func)(
+        data, config, known_craft
     )
+    if cot is not None:
+        return b"\n".join([pytak.DEFAULT_XML_DECLARATION, ET.tostring(cot)])
+    Logger.debug("No CoT XML generated.")
+    return None

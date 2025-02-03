@@ -18,10 +18,16 @@
 
 """AISCOT Functions."""
 
+import logging
+import os
+
 from csv import DictReader
 from typing import TextIO
 
 import aiscot
+
+Logger = logging.getLogger(__name__)
+Debug = bool(os.getenv("DEBUG", False))
 
 
 def read_known_craft_fd(csv_fd: TextIO) -> list:
@@ -62,6 +68,8 @@ def get_known_craft(csv_file: str) -> list:
 def read_mid_db_file(csv_file: str = "") -> dict:
     """Read the MID_DB_FILE file into a `dict`."""
     csv_file = csv_file or aiscot.DEFAULT_MID_DB_FILE
+    Logger.debug(f"Reading MID DB file: {csv_file}")
+
     mid_digits: list = []
     mid_allocated_to: list = []
 
@@ -77,8 +85,11 @@ def read_mid_db_file(csv_file: str = "") -> dict:
 def read_ship_db_file(csv_file: str = "") -> list:
     """Read the SHIP_DB_FILE file into a `list`."""
     csv_file = csv_file or aiscot.DEFAULT_SHIP_DB_FILE
+    Logger.debug(f"Reading Ship DB file: {csv_file}")
+
     all_rows: list = []
     fields: list = ["MMSI", "name", "unk", "vtype"]
+
     with open(csv_file, "r", encoding="ISO-8859-1") as csv_fd:
         reader = DictReader(csv_fd, fields)
         for row in reader:
@@ -106,7 +117,7 @@ def get_mid(mmsi: str) -> str:
     Country name in the MID Database from ITU.
     """
     mid: str = str(mmsi)[:3]
-    country: str = MID_DB.get(mid)
+    country: str = MID_DB.get(mid, "")
     return country
 
 
@@ -174,10 +185,5 @@ def get_shipname(mmsi: str) -> str:
     :param mmsi: MMSI of the ship.
     :returns: Ship name.
     """
-    ship_name: str = ""
-    # TODO: Optimize this search:
-    for ship in SHIP_DB:
-        if str(ship.get("MMSI")) == str(mmsi):
-            ship_name = ship.get("name")
-            break
-    return ship_name
+    ship_dict = {ship.get("MMSI"): ship.get("name") for ship in SHIP_DB}
+    return ship_dict.get(str(mmsi), "")

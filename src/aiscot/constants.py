@@ -19,38 +19,20 @@
 
 """AISCOT Constants."""
 
-import logging
 import os
 
-_DEFAULT_MID_DB_FILE = (
+from importlib.resources import files
+
+default_mid_file = (
     "data/MaritimeIdentificationDigits-bb62983a-cf0e-40a1-9431-cd54eaeb1c85.csv"
 )
-_DEFAULT_SHIP_DB_FILE = "data/yadd_mmsi_ship_2023-02-11-001541.txt"
+default_ship_file = "data/yadd_mmsi_ship_2023-02-11-001541.txt"
 
-try:
-    from pkg_resources import resource_filename
+_mid = os.environ.get("AISCOT_MID_DB_FILE", default_mid_file)
+_ship = os.environ.get("AISCOT_SHIP_DB_FILE", default_ship_file)
 
-    DEFAULT_MID_DB_FILE = resource_filename(__name__, _DEFAULT_MID_DB_FILE)
-    DEFAULT_SHIP_DB_FILE = resource_filename(__name__, _DEFAULT_SHIP_DB_FILE)
-except ImportError:
-    from importlib.resources import files
-
-    DEFAULT_MID_DB_FILE = str(files("aiscot").joinpath(_DEFAULT_MID_DB_FILE))
-    DEFAULT_SHIP_DB_FILE = str(files("aiscot").joinpath(_DEFAULT_SHIP_DB_FILE))
-
-if bool(os.environ.get("DEBUG")):
-    LOG_LEVEL = logging.DEBUG
-    LOG_FORMAT = logging.Formatter(
-        (
-            "%(asctime)s aiscot %(levelname)s %(name)s.%(funcName)s:%(lineno)d "
-            " - %(message)s"
-        )
-    )
-    logging.debug("aiscot Debugging Enabled via DEBUG Environment Variable.")
-else:
-    LOG_LEVEL = logging.INFO
-    LOG_FORMAT = logging.Formatter(("%(asctime)s aiscot %(levelname)s - %(message)s"))
-
+DEFAULT_MID_DB_FILE = str(files("aiscot").joinpath(_mid))
+DEFAULT_SHIP_DB_FILE = str(files("aiscot").joinpath(_ship))
 
 DEFAULT_LISTEN_PORT: int = 5050
 DEFAULT_LISTEN_HOST: str = "0.0.0.0"

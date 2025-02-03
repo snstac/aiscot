@@ -2,24 +2,21 @@
 
 # Display Ships in TAK - AIS to TAK Gateway 
 
-AISCOT is software for monitoring and analyzing maritime surveillance data within the 
-Team Awareness KIT (TAK) suite of products.
-
-AISCOT captures and reports real-time automatic identification system (AIS) data 
-received from vessels (or other maritime objects) into TAK Products using native TAK 
-protocols, including Cursor on Target (CoT).
-
-AISCOT has been evaluated with ATAK, WinTAK, iTAK, TAK Server & TAKX, and is know to 
-work with other situational awareness (SA) software.
-
-AISCOT supports over-the-air radio (RF) AIS transmissions, local NMEA, and Internet 
-AIS aggregators (like AISHUB). AIS data is displayed in TAK with appropriate icons, 
-attitude, type, track, bearing, speed, callsign and more.
-
-AISCOT was original developed to support an [open ocean boat race in the Northern 
-Pacific Ocean](http://ampledata.org/boat_race_support.html).
+AISCOT is a software solution designed to monitor and analyze maritime surveillance data within the Team Awareness KIT (TAK) suite of products. It captures and reports real-time Automatic Identification System (AIS) data from vessels and other maritime objects into TAK products using native TAK protocols, including Cursor on Target (CoT).
 
 [AISCOT documentation is available here.](https://aiscot.rtfd.io)
+
+## Features
+
+- Real-time AIS data capture and reporting
+- Compatibility with ATAK, WinTAK, iTAK, TAK Server, TAKX, and other situational awareness software
+- Support for over-the-air radio (RF) AIS transmissions, local NMEA, and Internet AIS aggregators (e.g., AISHUB)
+- Display of AIS data in TAK with icons, attitude, type, track, bearing, speed, callsign, and more
+- Support for US DOT SeaVision
+
+## Background
+
+AISCOT was originally developed to support an [open ocean boat race in the Northern Pacific Ocean](http://ampledata.org/boat_race_support.html).
 
 ## License & Copyright
 

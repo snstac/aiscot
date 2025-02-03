@@ -1,3 +1,8 @@
+## AISCOT 6.1.0
+
+- Added support for DOT's SeaVision.
+- Dropped support for Python 3.6
+
 ## AISCOT 6.0.0
 
 - New for 2024.

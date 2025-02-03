@@ -21,7 +21,8 @@
 import pytest
 
 import aiscot
-import aiscot.ais_functions
+
+from aiscot import ais_functions
 
 
 @pytest.fixture

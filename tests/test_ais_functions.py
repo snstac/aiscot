@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-# Copyright 2023 Greg Albrecht <oss@undef.net>
+# Copyright Sensors & Signals LLC https://www.snstac.com/
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,21 +20,7 @@
 
 import pytest
 
-from aiscot.constants import DEFAULT_MID_DB_FILE, DEFAULT_SHIP_DB_FILE
-
-from aiscot.ais_functions import (
-    get_aton,
-    get_mid,
-    get_known_craft,
-    get_sar,
-    get_crs,
-    get_shipname,
-)
-
-
-__author__ = "Greg Albrecht <oss@undef.net>"
-__copyright__ = "Copyright 2023 Greg Albrecht"
-__license__ = "Apache License, Version 2.0"
+import aiscot
 
 
 @pytest.fixture
@@ -121,38 +107,40 @@ def sample_aton():
 def test_get_mid(sample_data_pyAISm):
     """Test that git_mid returns the country MID corresponding for a given MMSI."""
     mmsi = sample_data_pyAISm.get("mmsi")
-    country = get_mid(mmsi)
+    country = aiscot.ais_functions.get_mid(mmsi)
     assert country == "United States of America"
 
 
 def test_get_known_craft():
-    """Test reading know craft CSV with `get_known_craft()`."""
-    known_craft = get_known_craft("tests/data/test_known_craft.csv")
+    """Test reading know craft CSV with `aiscot.ais_functions.get_known_craft()`."""
+    known_craft = aiscot.ais_functions.get_known_craft(
+        "tests/data/test_known_craft.csv"
+    )
     assert known_craft[0].get("MMSI") == "366892000"
 
 
 def test_get_aton(sample_aton):
-    """Test Aid to Naviation vessels with `get_aton()`."""
+    """Test Aid to Naviation vessels with `aiscot.ais_functions.get_aton()`."""
     mmsi = sample_aton.get("mmsi")
-    assert get_aton(mmsi) is True
+    assert aiscot.ais_functions.get_aton(mmsi) is True
 
 
 def test_get_crs():
-    """Test CRS vessels with `get_crs()`."""
-    assert get_crs("3669123") is True
-    assert get_crs("003369000") is True
-    assert get_crs("938852000") is False
+    """Test CRS vessels with `aiscot.ais_functions.get_crs()`."""
+    assert aiscot.ais_functions.get_crs("3669123") is True
+    assert aiscot.ais_functions.get_crs("003369000") is True
+    assert aiscot.ais_functions.get_crs("938852000") is False
 
 
 def test_get_sar():
-    """Test SAR vessels with `get_sar()`."""
-    assert get_sar("111892000") is True
-    assert get_sar("303862000") is True
-    assert get_sar("338852000") is True
-    assert get_sar("938852000") is False
+    """Test SAR vessels with `aiscot.ais_functions.get_sar()`."""
+    assert aiscot.ais_functions.get_sar("111892000") is True
+    assert aiscot.ais_functions.get_sar("303862000") is True
+    assert aiscot.ais_functions.get_sar("338852000") is True
+    assert aiscot.ais_functions.get_sar("938852000") is False
 
 
 def test_get_shipname():
-    """Test getting shipname from db using `get_shipname()`."""
-    assert get_shipname("303990000") == "USCG EAGLE"
-    assert get_shipname("938852000") == ""
+    """Test getting shipname from db using `aiscot.ais_functions.get_shipname()`."""
+    assert aiscot.ais_functions.get_shipname("303990000") == "USCG EAGLE"
+    assert aiscot.ais_functions.get_shipname("938852000") == ""

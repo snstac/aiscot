@@ -23,9 +23,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from aiscot.ais_functions import read_known_craft_fd
-from aiscot.constants import DEFAULT_MID_DB_FILE, DEFAULT_SHIP_DB_FILE
-from aiscot.functions import ais_to_cot, cot_to_xml
+import aiscot
 
 
 @pytest.fixture
@@ -115,11 +113,11 @@ def sample_known_craft():
 366892000,TACO_01,a-f-S-T-A-C-O,
 """
     csv_fd = io.StringIO(sample_csv)
-    return read_known_craft_fd(csv_fd)
+    return aiscot.ais_functions.read_known_craft_fd(csv_fd)
 
 
 def test_ais_to_cot(sample_data_pyAISm):
-    cot = ais_to_cot(sample_data_pyAISm)
+    cot = aiscot.ais_to_cot(sample_data_pyAISm)
     assert isinstance(cot, ET.Element)
     assert cot.tag == "event"
     assert cot.attrib["version"] == "2.0"
@@ -154,7 +152,7 @@ def test_ais_to_cot_with_known_craft(sample_data_pyAISm, sample_known_craft):
         or [{}]
     )[0]
 
-    cot = ais_to_cot(sample_data_pyAISm, known_craft=known_craft)
+    cot = aiscot.ais_to_cot(sample_data_pyAISm, known_craft=known_craft)
 
     assert isinstance(cot, ET.Element)
     assert cot.tag == "event"
@@ -181,9 +179,9 @@ def test_ais_to_cot_with_known_craft(sample_data_pyAISm, sample_known_craft):
 
 
 def test_ais_to_cot_none():
-    """Test that `ais_to_cot()` only renders valid input data."""
+    """Test that `aiscot.ais_to_cot()` only renders valid input data."""
     assert (
-        ais_to_cot(
+        aiscot.ais_to_cot(
             {
                 "mmsi": 366892000,
                 "lon": 0,
@@ -193,7 +191,7 @@ def test_ais_to_cot_none():
         is None
     )
     assert (
-        ais_to_cot(
+        aiscot.ais_to_cot(
             {
                 "mmsi": 366892000,
                 "lon": -122.51208,
@@ -203,7 +201,7 @@ def test_ais_to_cot_none():
         is None
     )
     assert (
-        ais_to_cot(
+        aiscot.ais_to_cot(
             {
                 "mmsi": "",
                 "lon": -122.51208,
@@ -212,23 +210,23 @@ def test_ais_to_cot_none():
         )
         is None
     )
-    assert ais_to_cot({}) is None
+    assert aiscot.ais_to_cot({}) is None
 
 
 def test_ais_to_cot_dont_ignore_aton(sample_aton):
     """Test ignoring Aids to Naviation (ATON)."""
-    assert ais_to_cot(sample_aton, {"IGNORE_ATON": False}) is not None
+    assert aiscot.ais_to_cot(sample_aton, {"IGNORE_ATON": False}) is not None
 
 
 def test_ais_to_cot_ignore_aton(sample_aton):
     """Test ignoring Aids to Naviation (ATON)."""
-    assert ais_to_cot(sample_aton, {"IGNORE_ATON": True}) is None
+    assert aiscot.ais_to_cot(sample_aton, {"IGNORE_ATON": True}) is None
 
 
 def test_ais_to_cot_shipname(sample_data_pyAISm):
     """Test converting AIS to CoT with a known shipname."""
     sample_data_pyAISm["mmsi"] = "303990000"
-    cot = ais_to_cot(sample_data_pyAISm)
+    cot = aiscot.ais_to_cot(sample_data_pyAISm)
 
     detail = cot.findall("detail")
     assert detail[0].tag == "detail"
@@ -240,7 +238,7 @@ def test_ais_to_cot_shipname(sample_data_pyAISm):
 def test_ais_to_cot_sar(sample_data_pyAISm):
     """Test converting AIS to CoT for a SAR vessel."""
     sample_data_pyAISm["mmsi"] = "303862000"
-    cot = ais_to_cot(sample_data_pyAISm)
+    cot = aiscot.ais_to_cot(sample_data_pyAISm)
 
     assert cot.tag == "event"
     assert cot.attrib["type"] == "a-f-S-X-L"
@@ -249,7 +247,7 @@ def test_ais_to_cot_sar(sample_data_pyAISm):
 def test_ais_to_cot_crs(sample_data_pyAISm):
     """Test converting AIS to CoT for a CRS vessel."""
     sample_data_pyAISm["mmsi"] = "3669123"
-    cot = ais_to_cot(sample_data_pyAISm)
+    cot = aiscot.ais_to_cot(sample_data_pyAISm)
 
     assert cot.tag == "event"
     assert cot.attrib["type"] == "a-f-G-I-U-T"
@@ -257,6 +255,6 @@ def test_ais_to_cot_crs(sample_data_pyAISm):
 
 def test_ais_to_cot(sample_data_pyAISm):
     """Test converting AIS to CoT."""
-    cot: bytes = cot_to_xml(sample_data_pyAISm)
+    cot: bytes = aiscot.cot_to_xml(sample_data_pyAISm)
     assert b"a-f-S-X-M" in cot
     assert b"MMSI-366892000" in cot

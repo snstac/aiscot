@@ -29,7 +29,7 @@ from .constants import (  # NOQA
     DEFAULT_SHIP_DB_FILE,
 )
 
-from .functions import create_tasks, cot_to_xml  # NOQA
+from .functions import create_tasks, cot_to_xml, ais_to_cot  # NOQA
 
 from .ais_functions import get_known_craft  # NOQA
 

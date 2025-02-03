@@ -67,12 +67,12 @@ mypy:
 	mypy --strict .
 
 pytest:
-	pytest
+	python3 -m pytest
 
 test: editable install_test_requirements pytest
 
 test_cov:
-	pytest --cov=$(REPO_NAME) --cov-report term-missing
+	python3 -m pytest --cov=$(REPO_NAME) --cov-report term-missing
 
 black:
 	black .

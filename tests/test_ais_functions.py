@@ -22,8 +22,6 @@ import pytest
 
 import aiscot
 
-from aiscot import ais_functions
-
 
 @pytest.fixture
 def sample_data_libais():

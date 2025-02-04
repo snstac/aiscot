@@ -138,7 +138,7 @@ class AISWorker(pytak.QueueWorker):
 
     async def handle_data(self, data: list) -> None:
         """Handle received data."""
-        self._logger.debub("Handling Data: '%s'", data)
+        self._logger.debug("Handling Data: '%s'", data)
         if len(data) == 0:
             return
 
@@ -189,9 +189,9 @@ class AISWorker(pytak.QueueWorker):
             raise ValueError("FEED_URL is not set.")
 
         if "seavision" in self.feed_url:
-            await self.get_feed_seavision()
+            await self._get_feed_seavision()
         else:
-            await self.get_feed_aishub()
+            await self._get_feed_aishub()
 
     async def _get_feed_aishub(self) -> None:
         """Get AIS data from AISHub feed."""
@@ -294,5 +294,5 @@ class AISWorker(pytak.QueueWorker):
         async with aiohttp.ClientSession() as self.session:
             while 1:
                 self._logger.info("Polling every %ss: %s", poll_interval, self.feed_url)
-                await self.get_feed()
+                await self._get_feed()
                 await asyncio.sleep(poll_interval)

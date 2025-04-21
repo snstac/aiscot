@@ -47,7 +47,7 @@ clean:
 	@rm -rf *.egg* build dist *.py[oc] */*.py[co] cover doctest_pypi.cfg \
 		nosetests.xml pylint.log output.xml flake8.log tests.log \
 		test-result.xml htmlcov fab.log .coverage __pycache__ \
-		*/__pycache__ deb_dist .mypy_cache .pytest_cache
+		*/__pycache__ deb_dist .mypy_cache .pytest_cache src/*/__pycache__
 
 pep8:
 	flake8 --max-line-length=88 --extend-ignore=E203 --exit-zero $(REPO_NAME)/*.py

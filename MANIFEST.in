@@ -1,2 +1,5 @@
 include README.md CHANGELOG.md LICENSE src/aiscot/VERSION src/aiscot/data/*
 graft src
+recursive-include src/aiscot/data *.csv *.txt
+recursive-include aiscot/data *.csv *.txt
+include src/aiscot/data *.csv *.txt

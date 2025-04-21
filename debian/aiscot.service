@@ -26,6 +26,7 @@ User=aiscot
 ExecStart=/usr/bin/aiscot
 RuntimeDirectory=aiscot
 SyslogIdentifier=aiscot
+EnvironmentFile=-/etc/aryaos/aryaos-config.txt
 EnvironmentFile=/etc/default/aiscot
 Type=simple
 Restart=always

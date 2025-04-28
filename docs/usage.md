@@ -63,3 +63,28 @@ For example, the following Bound Box paints a large swath around Northern Califo
 
 
 > Pay special attention to the `ExecStart` line above. You'll need to provide the full local filesystem path to both your `aiscot` executable & AISCOT configuration files.
+
+## AISStream.io
+
+AISStream.io provides real-time vessel tracking data via a websocket connection. To use AISStream.io with AISCOT:
+
+1. Register at [AISStream.io](https://aisstream.io/) to get an API key
+2. Add the following configuration settings to your config file:
+
+```ini
+[aiscot]
+# AISstream.io API key (get one at aisstream.io)
+AISSTREAM_API_KEY = your_api_key_here
+
+# Define region of interest using bounding box coordinates
+BBOX_LON_MIN = -11
+BBOX_LAT_MIN = 35
+BBOX_LON_MAX = 30
+BBOX_LAT_MAX = 74
+
+# Optional: Specify message types to filter (comma-separated)
+# Available types: PositionReport, StaticData, etc.
+AISSTREAM_MESSAGE_TYPES = PositionReport
+```
+
+The AISStream.io integration will automatically connect and begin streaming vessel data to your TAK server when AISCOT starts, as long as the AISSTREAM_API_KEY is provided and FEED_URL is not set in your configuration.

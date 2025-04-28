@@ -10,6 +10,7 @@ AISCOT is a software solution designed to monitor and analyze maritime surveilla
 - Integration with TAK products using native protocols
 - Compatibility with ATAK, WinTAK, iTAK, TAK Server & TAKX
 - Support for RF AIS transmissions, local NMEA, and Internet AIS aggregators
+- Support for AISStream.io websocket feed for real-time vessel tracking
 - Display of AIS data with icons, attitude, type, track, bearing, speed, callsign, and more
 - Support for [United States Department of Transportation (US DOT) SeaVision](https://seavision.volpe.dot.gov/)
 

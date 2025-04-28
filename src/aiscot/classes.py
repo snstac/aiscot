@@ -266,7 +266,7 @@ class AISWorker(pytak.QueueWorker):
         """Initialize the feed URL and start polling or network receiver."""
         self.feed_url = self.config.get("FEED_URL")
         self._logger.info("Using FEED_URL: %s", self.feed_url)
-        
+
         # Check if AISStream.io API key is present
         if self.config.get("AISSTREAM_API_KEY") and not self.feed_url:
             # AISStream.io takes precedence if FEED_URL is not set

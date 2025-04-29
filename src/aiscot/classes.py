@@ -30,6 +30,7 @@ import aiohttp
 import pytak
 import aiscot
 import aiscot.pyAISm
+from aiscot.aisstream import AISStreamClient
 
 
 # pylint: disable=too-many-instance-attributes
@@ -135,6 +136,7 @@ class AISWorker(pytak.QueueWorker):
         self.known_craft_db: List[Any] = []
         self.session: Optional[aiohttp.ClientSession] = None
         self.feed_url: Optional[str] = None
+        self.aisstream_client: Optional[AISStreamClient] = None
 
     async def handle_data(self, data: list) -> None:
         """Handle received data."""
@@ -264,7 +266,12 @@ class AISWorker(pytak.QueueWorker):
         """Initialize the feed URL and start polling or network receiver."""
         self.feed_url = self.config.get("FEED_URL")
         self._logger.info("Using FEED_URL: %s", self.feed_url)
-        if self.feed_url:
+
+        # Check if AISStream.io API key is present
+        if self.config.get("AISSTREAM_API_KEY") and not self.feed_url:
+            # AISStream.io takes precedence if FEED_URL is not set
+            await self._aisstream_rx()
+        elif self.feed_url:
             await self._poll_feed()
         else:
             await self._network_rx()
@@ -296,3 +303,9 @@ class AISWorker(pytak.QueueWorker):
                 self._logger.info("Polling every %ss: %s", poll_interval, self.feed_url)
                 await self._get_feed()
                 await asyncio.sleep(poll_interval)
+
+    async def _aisstream_rx(self) -> None:
+        """Start an AISStream.io receiver."""
+        self._logger.info("Starting AISStream.io receiver")
+        self.aisstream_client = AISStreamClient(self.queue, self.config)
+        await self.aisstream_client.connect()

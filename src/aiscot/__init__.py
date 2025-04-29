@@ -34,3 +34,5 @@ from .functions import create_tasks, cot_to_xml, ais_to_cot  # NOQA
 from .ais_functions import get_known_craft  # NOQA
 
 from .classes import AISWorker  # NOQA
+
+from .aisstream import AISStreamClient  # NOQA

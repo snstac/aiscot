@@ -1,4 +1,3 @@
-
 The following diagram shows an example setup of AISCOT utilizing a dAISy+ AIS receiver 
 with an outboard Marine VHF antenna, a Raspberry Pi running aisdispatcher and AISCOT, 
 forwarding COT to a TAK Server and WinTAK & ATAK clients. (OV-1)
@@ -64,6 +63,47 @@ POLL_INTERVAL = 10
 2. Use the configuration file when starting ADSBCOT: ``adsbcot -c adsbcot.ini``
 > Ensure you know the full path to your configuration file.
 
+## Using AISStream.io for maritime data
+
+This example shows how to use the AISStream.io web API to get real-time maritime data for the Gulf of Mexico region and forward it to a TAK Server.
+
+```ini
+[aiscot]
+# Connect to TAK Server over TCP
+COT_URL = tcp://10.10.10.233:8086
+
+# AISstream.io API key (get one at aisstream.io)
+AISSTREAM_API_KEY = your_api_key_here
+
+# Gulf of Mexico coordinates 
+# IMPORTANT: AISStream.io uses [latitude, longitude] format
+BBOX_LAT_MIN = 18
+BBOX_LON_MIN = -98
+BBOX_LAT_MAX = 30
+BBOX_LON_MAX = -82
+
+# Message types to include (multiple types for better coverage)
+AISSTREAM_MESSAGE_TYPES = PositionReport,ShipStaticData,StandardClassBPositionReport,ExtendedClassBPositionReport
+
+# Optional file path for persisting vessel names
+# VESSEL_CACHE_FILE = vessel_names.json
+```
+
+### Usage
+
+1. Add the configuration text to a configuration file named: `aiscot.ini`
+2. Use the configuration file when starting AISCOT: `aiscot -c aiscot.ini`
+
+### Notes on AISStream.io
+
+- You must [register on the AISStream.io website](https://aisstream.io/) to get an API key.
+- Unlike other data sources, when using AISStream.io, you should **not** set the `FEED_URL` parameter.
+- The coordinate format is critical - AISStream.io uses [latitude, longitude] which is opposite of many mapping systems.
+- If you're not seeing any data, check that:
+  1. Your API key is correct
+  2. Your bounding box coordinates are in the correct format
+  3. Your bounding box covers an area with active maritime traffic
+  4. You're requesting the right message types
 
 ## Using environment variables
 

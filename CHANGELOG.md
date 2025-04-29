@@ -1,3 +1,9 @@
+## AISCOT 6.2.0
+
+- Added support for AISStream.io websocket feed
+- Created new AISStreamClient class for real-time vessel tracking
+- Added example test script for AISStream integration
+
 ## AISCOT 6.1.0
 
 - Added support for DOT's SeaVision.

@@ -1,21 +1,27 @@
 ![Screenshot of ships in ATAK, via AISCOT.](https://aiscot.readthedocs.io/en/latest/media/aiscot_screenshot_tak_logo.png)
 
-# Display Ships in TAK - AIS to TAK Gateway 
+# AIS to TAK Gateway - Maritime Domain Awareness for Public Safety & Defense
 
-AISCOT is a software solution designed to monitor and analyze maritime surveillance data within the Team Awareness KIT (TAK) suite. It captures and reports real-time Automatic Identification System (AIS) data from vessels and other maritime objects into TAK products using native TAK protocols, including Cursor on Target (CoT).
+AISCOT provides critical maritime domain awareness by streaming real-time vessel tracking data directly into Team Awareness Kit (TAK) platforms. This solution enables public safety professionals to monitor maritime activities with comprehensive situational awareness through native TAK integration.
 
-## Features
+## Key Capabilities
 
-- Real-time AIS data capture and reporting
-- Integration with TAK products using native protocols
-- Compatibility with ATAK, WinTAK, iTAK, TAK Server & TAKX
-- Support for RF AIS transmissions, local NMEA, and Internet AIS aggregators
-- Display of AIS data with icons, attitude, type, track, bearing, speed, callsign, and more
-- Support for [United States Department of Transportation (US DOT) SeaVision](https://seavision.volpe.dot.gov/)
+- **Real-time Maritime Tracking**: Continuous AIS data capture and reporting for immediate threat assessment
+- **Native TAK Integration**: Seamless compatibility with ATAK, WinTAK, iTAK, TAK Server & TAKX using Cursor on Target (CoT) protocols
+- **Multi-source Data Fusion**: Support for RF AIS transmissions, local NMEA feeds, and Internet-based AIS aggregators
+- **Comprehensive Vessel Intelligence**: Display vessel icons, attitude, type, track history, bearing, speed, callsign, and maritime identifiers
+- **Government Data Access**: Integration with [US Department of Transportation SeaVision](https://seavision.volpe.dot.gov/) for enhanced coverage
+
+## Use Cases
+
+- **Port Security**: Monitor vessel approaches and harbor activities
+- **Border Protection**: Track maritime border crossings and suspicious activities  
+- **Search & Rescue**: Coordinate response efforts with real-time vessel positions
+- **Intelligence Operations**: Analyze maritime patterns and vessel behaviors
 
 ## Documentation
 
-[AISCOT documentation is available here.](https://aiscot.rtfd.io)
+[Complete AISCOT documentation and deployment guides](https://aiscot.rtfd.io)
 
 ## License & Copyright
 

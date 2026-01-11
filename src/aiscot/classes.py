@@ -50,7 +50,7 @@ class AISNetworkClient(asyncio.Protocol):
         """Initialize this class."""
         self.transport = None
         self.address = None
-        self.known_craft_db: Optional[list] = None
+        self.known_craft_db: Optional[dict] = None
 
         self.ready = ready
         self.queue = queue
@@ -60,7 +60,7 @@ class AISNetworkClient(asyncio.Protocol):
             for handler in self._logger.handlers:
                 handler.setLevel(logging.DEBUG)
 
-    def handle_message(self, data) -> None:
+    def handle_message(self, data: bytes) -> None:
         """Handle incoming AIS data from network."""
         d_data = data.decode().strip()
         msg: dict = aiscot.pyAISm.decod_ais(d_data)
@@ -72,15 +72,7 @@ class AISNetworkClient(asyncio.Protocol):
         known_craft: dict = {}
 
         if self.known_craft_db:
-            known_craft = (
-                list(
-                    filter(
-                        lambda x: x["MMSI"].strip().upper() == mmsi,
-                        self.known_craft_db,
-                    )
-                )
-                or [{}]
-            )[0]
+            known_craft = self.known_craft_db.get(mmsi, {})
             # self._logger.debug("known_craft='%s'", known_craft)
 
         # Skip if we're using known_craft CSV and this Craft isn't found:
@@ -109,10 +101,12 @@ class AISNetworkClient(asyncio.Protocol):
         known_craft = self.config.get("KNOWN_CRAFT")
         if known_craft:
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
-            self.known_craft_db = aiscot.get_known_craft(known_craft)
+            craft_list = aiscot.get_known_craft(known_craft)
+            # Convert to dict for O(1) lookups by MMSI
+            self.known_craft_db = {c["MMSI"].strip().upper(): c for c in craft_list}
         self.ready.set()
 
-    def datagram_received(self, data, addr) -> None:
+    def datagram_received(self, data: bytes, addr: tuple) -> None:
         """Call when a UDP datagram is received."""
         self._logger.debug("Recieved from %s: '%s'", addr, data)
         for line in data.splitlines():
@@ -132,7 +126,7 @@ class AISWorker(pytak.QueueWorker):
         """Initialize an instance of this class."""
         super().__init__(queue, config)
         _ = [x.setFormatter(pytak.LOG_FORMAT) for x in self._logger.handlers]
-        self.known_craft_db: List[Any] = []
+        self.known_craft_db: dict = {}
         self.session: Optional[aiohttp.ClientSession] = None
         self.feed_url: Optional[str] = None
 
@@ -145,7 +139,7 @@ class AISWorker(pytak.QueueWorker):
         for msg in data:
             await self._process_message(msg)
 
-    async def _process_message(self, msg) -> None:
+    async def _process_message(self, msg: dict) -> None:
         """Process a single AIS message."""
         mmsi = str(msg.get("MMSI", msg.get("mmsi", "")))
         if not mmsi:
@@ -154,15 +148,7 @@ class AISWorker(pytak.QueueWorker):
         known_craft: dict = {}
 
         if self.known_craft_db:
-            known_craft = (
-                list(
-                    filter(
-                        lambda x: x["MMSI"].strip().upper() == mmsi,
-                        self.known_craft_db,
-                    )
-                )
-                or [{}]
-            )[0]
+            known_craft = self.known_craft_db.get(mmsi, {})
             self._logger.debug("known_craft='%s'", known_craft)
 
         # Skip if we're using known_craft CSV and this Craft isn't found:
@@ -252,7 +238,9 @@ class AISWorker(pytak.QueueWorker):
         known_craft = self.config.get("KNOWN_CRAFT")
         if known_craft:
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
-            self.known_craft_db = aiscot.get_known_craft(known_craft)
+            craft_list = aiscot.get_known_craft(known_craft)
+            # Convert to dict for O(1) lookups by MMSI
+            self.known_craft_db = {c["MMSI"].strip().upper(): c for c in craft_list}
 
     async def run(self, number_of_iterations=-1) -> None:
         """Run this Thread, reads AIS & outputs CoT."""

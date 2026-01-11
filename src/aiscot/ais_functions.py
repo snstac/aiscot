@@ -82,6 +82,17 @@ def read_mid_db_file(csv_file: str = "") -> dict:
     return dict(zip(mid_digits, mid_allocated_to))
 
 
+_mid_db_cache: dict = {}
+
+
+def get_mid_db() -> dict:
+    """Get MID database, loading it only once (lazy initialization)."""
+    global _mid_db_cache
+    if not _mid_db_cache:
+        _mid_db_cache = read_mid_db_file()
+    return _mid_db_cache
+
+
 def read_ship_db_file(csv_file: str = "") -> list:
     """Read the SHIP_DB_FILE file into a `list`."""
     csv_file = csv_file or aiscot.DEFAULT_SHIP_DB_FILE
@@ -97,8 +108,24 @@ def read_ship_db_file(csv_file: str = "") -> list:
         return all_rows
 
 
-MID_DB = read_mid_db_file()
-SHIP_DB = read_ship_db_file()
+_mid_db_cache: dict = {}
+_ship_db_cache: list = []
+
+
+def get_mid_db() -> dict:
+    """Get MID database, loading it only once (lazy initialization)."""
+    global _mid_db_cache
+    if not _mid_db_cache:
+        _mid_db_cache = read_mid_db_file()
+    return _mid_db_cache
+
+
+def get_ship_db() -> list:
+    """Get ship database, loading it only once (lazy initialization)."""
+    global _ship_db_cache
+    if not _ship_db_cache:
+        _ship_db_cache = read_ship_db_file()
+    return _ship_db_cache
 
 
 def get_mid(mmsi: str) -> str:
@@ -117,7 +144,8 @@ def get_mid(mmsi: str) -> str:
     Country name in the MID Database from ITU.
     """
     mid: str = str(mmsi)[:3]
-    country: str = MID_DB.get(mid, "")
+    mid_db = get_mid_db()
+    country: str = mid_db.get(mid, "")
     return country
 
 
@@ -185,5 +213,8 @@ def get_shipname(mmsi: str) -> str:
     :param mmsi: MMSI of the ship.
     :returns: Ship name.
     """
-    ship_dict = {ship.get("MMSI"): ship.get("name") for ship in SHIP_DB}
-    return ship_dict.get(str(mmsi), "")
+    ship_db = get_ship_db()
+    for ship in ship_db:
+        if ship.get("MMSI") == str(mmsi):
+            return ship.get("name", "")
+    return ""

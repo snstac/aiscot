@@ -1,3 +1,8 @@
+## AISCOT 7.1.0
+
+- Happy New Year 2025!
+- Performance Improvements.
+
 ## AISCOT 6.1.0
 
 - Added support for DOT's SeaVision.

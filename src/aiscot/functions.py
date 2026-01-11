@@ -125,12 +125,12 @@ def ais_to_cot(
     xais: Element = Element("__ais")
     xais.set("cot_host_id", cot_host_id)
 
-    ais_name: str = (
-        str(craft.get("name", craft.get("NAME", ""))).replace("@", "").strip()
-    )
-    shipname: str = str(craft.get("shipname", aisfunc.get_shipname(mmsi)))
+    ais_name: str = str(
+        craft.get("name") or craft.get("NAME") or ""
+    ).replace("@", "").strip()
+    shipname: str = str(craft.get("shipname") or aisfunc.get_shipname(mmsi) or "")
     vessel_type: str = str(
-        craft.get("type", craft.get("TYPE", craft.get("veselType", "")))
+        craft.get("type") or craft.get("TYPE") or craft.get("veselType") or ""
     )
 
     cot_icon = config.get("COT_ICON")
@@ -207,8 +207,9 @@ def ais_to_cot(
     contact.set("callsign", str(callsign))
 
     remarks = Element("remarks")
-    remarks_fields.append(f"{cot_host_id}")
-    _remarks = " ".join(list(filter(None, remarks_fields)))
+    if cot_host_id:
+        remarks_fields.append(cot_host_id)
+    _remarks = " ".join(filter(None, remarks_fields))
     remarks.text = _remarks
 
     detail = Element("detail")
@@ -248,7 +249,7 @@ def cot_to_xml(
     data: dict,
     config: Union[SectionProxy, dict, None] = None,
     known_craft: Optional[dict] = None,
-    func=None,
+    func: Optional[str] = None,
 ) -> Optional[bytes]:
     """Return a CoT XML object as an XML string, using the given func."""
     func = func or "ais_to_cot"

@@ -175,7 +175,7 @@ def test_ais_to_cot_with_known_craft(sample_data_pyAISm, sample_known_craft):
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
-    assert track[0].attrib["speed"] == "3.292181069958848"
+    assert track[0].attrib["speed"] == "3.29216"
 
 
 def test_ais_to_cot_none():

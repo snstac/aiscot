@@ -36,6 +36,8 @@ import aiscot.pyAISm
 class AISNetworkClient(asyncio.Protocol):
     """Network AIS feed client (receiver)."""
 
+    __slots__ = ('transport', 'address', 'known_craft_db', 'ready', 'queue', 'config', '_include_all_craft', '_debug')
+
     _logger = logging.getLogger(__name__)
     if not _logger.handlers:
         _logger.setLevel(pytak.LOG_LEVEL)
@@ -56,7 +58,11 @@ class AISNetworkClient(asyncio.Protocol):
         self.queue = queue
         self.config = config
 
-        if self.config.getboolean("DEBUG", False):
+        # Cache config values to avoid repeated parsing
+        self._debug = self.config.getboolean("DEBUG", False)
+        self._include_all_craft = self.config.getboolean("INCLUDE_ALL_CRAFT", False)
+
+        if self._debug:
             for handler in self._logger.handlers:
                 handler.setLevel(logging.DEBUG)
 
@@ -65,7 +71,8 @@ class AISNetworkClient(asyncio.Protocol):
         d_data = data.decode().strip()
         msg: dict = aiscot.pyAISm.decod_ais(d_data)
 
-        self._logger.debug("Decoded AIS: '%s'", msg)
+        if self._debug:
+            self._logger.debug("Decoded AIS: '%s'", msg)
 
         mmsi = str(msg.get("mmsi", ""))
 
@@ -73,14 +80,9 @@ class AISNetworkClient(asyncio.Protocol):
 
         if self.known_craft_db:
             known_craft = self.known_craft_db.get(mmsi, {})
-            # self._logger.debug("known_craft='%s'", known_craft)
 
         # Skip if we're using known_craft CSV and this Craft isn't found:
-        if (
-            self.known_craft_db
-            and not known_craft
-            and not self.config.getboolean("INCLUDE_ALL_CRAFT")
-        ):
+        if self.known_craft_db and not known_craft and not self._include_all_craft:
             return
 
         event: Optional[bytes] = aiscot.cot_to_xml(
@@ -102,13 +104,18 @@ class AISNetworkClient(asyncio.Protocol):
         if known_craft:
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
             craft_list = aiscot.get_known_craft(known_craft)
-            # Convert to dict for O(1) lookups by MMSI
-            self.known_craft_db = {c["MMSI"].strip().upper(): c for c in craft_list}
+            # Convert to dict for O(1) lookups by MMSI with pre-normalized keys
+            self.known_craft_db = {
+                mmsi.strip().upper(): c
+                for c in craft_list
+                if (mmsi := c.get("MMSI"))
+            }
         self.ready.set()
 
     def datagram_received(self, data: bytes, addr: tuple) -> None:
         """Call when a UDP datagram is received."""
-        self._logger.debug("Recieved from %s: '%s'", addr, data)
+        if self._debug:
+            self._logger.debug("Recieved from %s: '%s'", addr, data)
         for line in data.splitlines():
             self.handle_message(line)
 
@@ -122,6 +129,8 @@ class AISNetworkClient(asyncio.Protocol):
 class AISWorker(pytak.QueueWorker):
     """AIS to TAK worker."""
 
+    __slots__ = ('known_craft_db', 'session', 'feed_url', '_include_all_craft', '_poll_interval', '_host', '_port')
+
     def __init__(self, queue: asyncio.Queue, config: ConfigParser) -> None:
         """Initialize an instance of this class."""
         super().__init__(queue, config)
@@ -129,6 +138,12 @@ class AISWorker(pytak.QueueWorker):
         self.known_craft_db: dict = {}
         self.session: Optional[aiohttp.ClientSession] = None
         self.feed_url: Optional[str] = None
+        
+        # Cache config values to avoid repeated parsing
+        self._include_all_craft = self.config.getboolean("INCLUDE_ALL_CRAFT", False)
+        self._poll_interval = int(self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL))
+        self._host = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)
+        self._port = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
 
     async def handle_data(self, data: list) -> None:
         """Handle received data."""
@@ -141,22 +156,21 @@ class AISWorker(pytak.QueueWorker):
 
     async def _process_message(self, msg: dict) -> None:
         """Process a single AIS message."""
-        mmsi = str(msg.get("MMSI", msg.get("mmsi", "")))
+        # Use .get() with chained fallback for MMSI
+        mmsi = msg.get("MMSI") or msg.get("mmsi")
         if not mmsi:
             return
+        mmsi = str(mmsi)
 
         known_craft: dict = {}
 
         if self.known_craft_db:
             known_craft = self.known_craft_db.get(mmsi, {})
-            self._logger.debug("known_craft='%s'", known_craft)
+            if known_craft:
+                self._logger.debug("known_craft='%s'", known_craft)
 
         # Skip if we're using known_craft CSV and this Craft isn't found:
-        if (
-            self.known_craft_db
-            and not known_craft
-            and not self.config.getboolean("INCLUDE_ALL_CRAFT")
-        ):
+        if self.known_craft_db and not known_craft and not self._include_all_craft:
             return
 
         event: Optional[bytes] = aiscot.cot_to_xml(
@@ -181,13 +195,6 @@ class AISWorker(pytak.QueueWorker):
 
     async def _get_feed_aishub(self) -> None:
         """Get AIS data from AISHub feed."""
-        if not self.session:
-            self._logger.error("No HTTP session available.")
-            return
-        if not self.feed_url:
-            self._logger.error("FEED_URL is not set.")
-            return
-
         self._logger.info("Using AISHub.com API: %s", self.feed_url)
 
         response = await self.session.request(method="GET", url=self.feed_url)
@@ -210,13 +217,6 @@ class AISWorker(pytak.QueueWorker):
 
     async def _get_feed_seavision(self) -> None:
         """Get AIS data from SeaVision feed."""
-        if not self.session:
-            self._logger.error("No HTTP session available.")
-            return
-        if not self.feed_url:
-            self._logger.error("FEED_URL is not set.")
-            return
-
         self._logger.info("Using SeaVision API")
         headers = {
             "x-api-key": self.config.get("SEAVISION_API_KEY"),
@@ -239,8 +239,12 @@ class AISWorker(pytak.QueueWorker):
         if known_craft:
             self._logger.info("Using KNOWN_CRAFT: %s", known_craft)
             craft_list = aiscot.get_known_craft(known_craft)
-            # Convert to dict for O(1) lookups by MMSI
-            self.known_craft_db = {c["MMSI"].strip().upper(): c for c in craft_list}
+            # Convert to dict for O(1) lookups by MMSI with pre-normalized keys
+            self.known_craft_db = {
+                mmsi.strip().upper(): c
+                for c in craft_list
+                if (mmsi := c.get("MMSI"))
+            }
 
     async def run(self, number_of_iterations=-1) -> None:
         """Run this Thread, reads AIS & outputs CoT."""
@@ -262,13 +266,11 @@ class AISWorker(pytak.QueueWorker):
         loop = asyncio.get_event_loop()
         ready = asyncio.Event()
 
-        port: int = int(self.config.get("LISTEN_PORT", aiscot.DEFAULT_LISTEN_PORT))
-        host: str = self.config.get("LISTEN_HOST", aiscot.DEFAULT_LISTEN_HOST)
-        self._logger.info("Listening for AIS on %s:%s", host, port)
+        self._logger.info("Listening for AIS on %s:%s", self._host, self._port)
 
         await loop.create_datagram_endpoint(
             lambda: AISNetworkClient(ready, self.queue, self.config),
-            local_addr=(host, port),
+            local_addr=(self._host, self._port),
         )
         await ready.wait()
         # Keep the coroutine alive without spinning the CPU
@@ -277,11 +279,8 @@ class AISWorker(pytak.QueueWorker):
 
     async def _poll_feed(self) -> None:
         """Poll a feed URL for AIS data."""
-        poll_interval: int = int(
-            self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL)
-        )
         async with aiohttp.ClientSession() as self.session:
             while 1:
-                self._logger.info("Polling every %ss: %s", poll_interval, self.feed_url)
+                self._logger.info("Polling every %ss: %s", self._poll_interval, self.feed_url)
                 await self._get_feed()
-                await asyncio.sleep(poll_interval)
+                await asyncio.sleep(self._poll_interval)

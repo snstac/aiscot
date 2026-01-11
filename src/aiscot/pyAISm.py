@@ -53,16 +53,12 @@ def sign_int(s_bytes):
     # converts signed pack of bytes (as a string) to signed int
     # @param s_bytes (string) : '1001001010010010...'
     # @return (int) : signed integer
-    temp = s_bytes
-    if s_bytes[0] == "1":
-        l = temp.rfind("1")  # find last one
-        temp2 = temp[:l].replace("1", "2")
-        temp2 = temp2.replace("0", "1")
-        temp2 = temp2.replace("2", "0")
-        temp = temp2 + temp[l:]
-        return -int(temp, 2)
-    else:
-        return int(temp, 2)
+    if s_bytes[0] == "0":
+        return int(s_bytes, 2)
+    # Negative number - perform two's complement
+    l = s_bytes.rfind("1")  # find last one
+    temp = s_bytes[:l].translate(str.maketrans("01", "10")) + s_bytes[l:]
+    return -int(temp, 2)
 
 
 def compute_checksum(msg):
@@ -71,21 +67,30 @@ def compute_checksum(msg):
     # @param (string) msg : one AIS sentense '!AIVDO,1,1,,,B00000000868rA6<H7KNswPUoP06,0*6A'
     # @return (string) : string representation of hexadecimal sum of XORing every char bitwise
     end = msg.rfind("*")  # we're gonna read from after '?'' to before '*
-    start = 0
-    if msg[0] in ("$", "!"):
-        start = 1  # reading after '!' if it exists
+    start = 1 if msg[0] in ("$", "!") else 0  # reading after '!' if it exists
     chcksum = 0
     for c in msg[start:end]:  # for every char in the ais sentenses (comma included)
-        chcksum = chcksum ^ ord(c)  # compare them with the x-or operator '^'
-    sumHex = "%x" % chcksum  # makes it hexadecimal
-    return sumHex.zfill(2).upper()
+        chcksum ^= ord(c)  # compare them with the x-or operator '^'
+    return f"{chcksum:02X}"
+
+
+def _parse_msg_parts(msg):
+    """Parse AIS message into parts (cached via split)."""
+    parts = msg.split(",")
+    return {
+        "type": parts[0],
+        "sentence_number": parts[1],
+        "sentence_count": parts[2],
+        "payload": parts[5],
+        "checksum": msg.split("*")[-1],
+    }
 
 
 def get_msg_type(msg):
     # read the ais sentense and return the message type
     # @param (string) msg : one AIS sentense '!AIVDM,2,1,3,B,55P5TL01VIaAL@7WKO@mBplU@<PDhh000000001S;AJ::4A80?4i@E53,0*3E'
     # @return (string) : the message type '!AIVDM'
-    return msg.split(",")[0]
+    return msg.split(",", 1)[0]
 
 
 def get_payload(msg):
@@ -113,7 +118,7 @@ def get_checksum(msg):
     # read the ais sentense and return the number of the sentense
     # @param (string) msg : one AIS sentense '!AIVDM,2,1,3,B,55P5TL01VIaAL@7WKO@mBplU@<PDhh000000001S;AJ::4A80?4i@E53,0*3E'
     # @return (string) checksum validator: '3E'
-    return msg.split("*")[-1]
+    return msg.rsplit("*", 1)[-1]
 
 
 def decod_payload(payload):
@@ -121,15 +126,13 @@ def decod_payload(payload):
     # doc : http://catb.org/gpsd/AIVDM.html#_aivdm_aivdo_payload_armoring
     # @param (string) payload : '177KQ' up to 82 chars
     # @return (string) data :  '000001000111000111011011100001'
-    data = ""
-    for i in range(len(payload)):
-        char = ord(payload[i]) - 48
+    result = []
+    for c in payload:
+        char = ord(c) - 48
         if char > 40:
-            char = char - 8
-        bit = "{0:b}".format(char)
-        bit = bit.zfill(6)  # makes it a full 6 bits
-        data = data + bit
-    return data
+            char -= 8
+        result.append(f"{char:06b}")
+    return "".join(result)
 
 
 def decod_6bits_ascii(bits):
@@ -148,12 +151,12 @@ def decod_str(data):
     # doc : http://catb.org/gpsd/AIVDM.html#_ais_payload_data_types
     # @param (string) data : a string of bits  '000001000001000001'
     # @return (string) a string of bits : 'AAA'
-    name = ""
-    for k in range(len(data) // 6):
-        letter = decod_6bits_ascii(data[6 * k : 6 * (k + 1)])
+    result = []
+    for k in range(0, len(data) - 5, 6):
+        letter = decod_6bits_ascii(data[k : k + 6])
         if letter != "@":
-            name += letter
-    return name.rstrip()
+            result.append(letter)
+    return "".join(result).rstrip()
 
 
 def is_auxiliary_craft(mmsi):
@@ -168,6 +171,7 @@ def decod_data(data):
     type_nb = int(data[0:6], 2)
 
     def decod_1(data):  # Message types 1,2,3
+        # Pre-computed: 1/600000.0 = 1.6666666666666667e-06
         ais_data = {"type": int(data[0:6], 2)}
         ais_data["repeat"] = int(data[6:8], 2)
         ais_data["mmsi"] = int(data[8:38], 2)
@@ -175,8 +179,8 @@ def decod_data(data):
         ais_data["turn"] = sign_int(data[42:50])
         ais_data["speed"] = int(data[50:60], 2)
         ais_data["accuracy"] = data[60]
-        ais_data["lon"] = sign_int(data[61:89]) / 600000.0
-        ais_data["lat"] = sign_int(data[89:116]) / 600000.0
+        ais_data["lon"] = sign_int(data[61:89]) * 1.6666666666666667e-06
+        ais_data["lat"] = sign_int(data[89:116]) * 1.6666666666666667e-06
         ais_data["course"] = int(data[116:128], 2) * 0.1
         ais_data["heading"] = int(data[128:137], 2)
         ais_data["second"] = int(data[137:143], 2)
@@ -196,8 +200,8 @@ def decod_data(data):
         ais_data["minute"] = int(data[66:72], 2)
         ais_data["second"] = int(data[72:78], 2)
         ais_data["accuracy"] = data[78]
-        ais_data["lon"] = sign_int(data[79:107]) / 600000.0
-        ais_data["lat"] = sign_int(data[107:134]) / 600000.0
+        ais_data["lon"] = sign_int(data[79:107]) * 1.6666666666666667e-06
+        ais_data["lat"] = sign_int(data[107:134]) * 1.6666666666666667e-06
         ais_data["epfd"] = int(data[134:138], 2)
         ais_data["raim"] = data[148]
         ais_data["radio"] = int(data[149:168], 2)
@@ -231,8 +235,8 @@ def decod_data(data):
         ais_data["mmsi"] = int(data[8:38], 2)
         ais_data["speed"] = int(data[46:56], 2)
         ais_data["accuracy"] = data[56]
-        ais_data["lon"] = sign_int(data[57:85]) / 600000.0
-        ais_data["lat"] = sign_int(data[85:112]) / 600000.0
+        ais_data["lon"] = sign_int(data[57:85]) * 1.6666666666666667e-06
+        ais_data["lat"] = sign_int(data[85:112]) * 1.6666666666666667e-06
         ais_data["course"] = int(data[112:124], 2) * 0.1
         ais_data["heading"] = int(data[124:133], 2)
         ais_data["second"] = int(data[133:139], 2)
@@ -251,8 +255,8 @@ def decod_data(data):
         ais_data = {"type": int(data[0:6], 2)}
         ais_data["speed"] = int(data[46:56], 2)
         ais_data["accuracy"] = data[56]
-        ais_data["lon"] = sign_int(data[57:85]) / 600000.0
-        ais_data["lat"] = sign_int(data[85:112]) / 600000.0
+        ais_data["lon"] = sign_int(data[57:85]) * 1.6666666666666667e-06
+        ais_data["lat"] = sign_int(data[85:112]) * 1.6666666666666667e-06
         ais_data["course"] = int(data[112:124], 2) * 0.1
         ais_data["heading"] = int(data[124:133], 2)
         ais_data["second"] = int(data[133:139], 2)
@@ -275,8 +279,8 @@ def decod_data(data):
         ais_data["aid_type"] = int(data[38:43], 2)
         ais_data["name"] = decod_str(data[43:163])
         ais_data["accuracy"] = data[163]
-        ais_data["lon"] = sign_int(data[164:192]) / 600000.0
-        ais_data["lat"] = sign_int(data[192:219]) / 600000.0
+        ais_data["lon"] = sign_int(data[164:192]) * 1.6666666666666667e-06
+        ais_data["lat"] = sign_int(data[192:219]) * 1.6666666666666667e-06
         ais_data["to_bow"] = int(data[219:228], 2)
         ais_data["to_stern"] = int(data[228:237], 2)
         ais_data["to_port"] = int(data[237:243], 2)
@@ -352,35 +356,37 @@ def decod_ais(msg):
     :param msg: (string) one AIS sentence  '!AIVDO,1,1,,,B00000000868rA6<H7KNswPUoP06,0*6A'
     :return: (dict) ais_data : {'type':18, etc...}
     """
-    if msg == "":
+    if not msg:
         return None
-    message_type = get_msg_type(msg)
-    if not (message_type == "!AIVDM" or message_type == "!AIVDO"):
+    
+    # Cache split results to avoid repeated splitting
+    parts = msg.split(",")
+    message_type = parts[0]
+    
+    if message_type not in ("!AIVDM", "!AIVDO"):
         raise UnrecognizedNMEAMessageError(message_type)
-    payload = get_payload(msg)
-    s_size = get_sentence_number(msg)
-    s_count = get_sentence_count(msg)
+    
+    s_size = parts[1]
+    s_count = parts[2]
+    payload = parts[5]
 
-    if compute_checksum(msg) != get_checksum(msg):
+    # Validate checksum
+    computed = compute_checksum(msg)
+    expected = msg.rsplit("*", 1)[-1]
+    if computed != expected:
         logger.error(
-            "Checksum not valid ("
-            + str(compute_checksum(msg))
-            + "!="
-            + str(get_checksum(msg))
-            + "), message is broken/corrupted"
+            f"Checksum not valid ({computed}!={expected}), message is broken/corrupted"
         )
         raise BadChecksumError()
 
-    if s_size != "1":  # usefull only if multi-line sentences.
+    if s_size != "1":  # useful only if multi-line sentences.
         global globPayload
-        if globPayload == "" and int(s_count) > 1:
+        if not globPayload and int(s_count) > 1:
             return {
                 "none": "empty"
             }  # This is not the first message and the main payload is empty
         if s_size != s_count:  # if this isn't the last messages
-            globPayload = (
-                globPayload + payload
-            )  # append the current payload to the main payload
+            globPayload += payload  # append the current payload to the main payload
             return {"none": "empty"}
         else:
             payload = globPayload + payload  # append the last payload
@@ -398,12 +404,11 @@ def format_coord(coord_dec, Dir=""):
     :param Dir: (char) char to specify the direction like 'N' for North. By default, nothing.
     :return: (string) a degree,minute,second coordinate + direction  43°17'41.7"N
     """
-    tmp = str(coord_dec).split(".")
-    deg = abs(float(tmp[0]))
-    mnt = float("0." + tmp[1]) * 60
-    tmp = str(mnt).split(".")
-    sec = float("0." + tmp[1]) * 60
-    return str(int(deg)) + "deg" + str(int(mnt)) + "'" + str(sec)[:4] + '"' + Dir
+    coord_dec = float(coord_dec)
+    deg = abs(int(coord_dec))
+    mnt = (abs(coord_dec) - deg) * 60
+    sec = (mnt - int(mnt)) * 60
+    return f'{deg}deg{int(mnt)}\'{sec:.1f}"{Dir}'
 
 
 def format_lat(lat):
@@ -731,13 +736,13 @@ def format_ais(ais_base):
     :return: (dict) ais_format : a dictionary with the same kay as ais_data but other value,
             None if ais_base is None
     """
-    if ais_base == None:
+    if ais_base is None:
         return None
     ais_format = ais_base.copy()
 
-    for key in list(ais_base.keys()):  # for every key we have
+    for key, value in ais_base.items():  # for every key we have
         if key in format_list:  # if we can format it
-            ais_format[key] = format_list[key](ais_format[key])  # format it
+            ais_format[key] = format_list[key](value)  # format it
 
     return ais_format
 

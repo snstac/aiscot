@@ -41,11 +41,7 @@ def read_known_craft_fd(csv_fd: TextIO) -> list:
     -------
     All Known Craft transforms.
     """
-    all_rows: list = []
-    reader = DictReader(csv_fd)
-    for row in reader:
-        all_rows.append(row)
-    return all_rows
+    return list(DictReader(csv_fd))
 
 
 def get_known_craft(csv_file: str) -> list:
@@ -59,57 +55,37 @@ def get_known_craft(csv_file: str) -> list:
     -------
     All Known Craft transforms.
     """
-    all_rows: list = []
+    if Debug:
+        Logger.debug(f"Reading Known Craft file: {csv_file}")
     with open(csv_file, encoding="UTF-8") as csv_fd:
-        all_rows = read_known_craft_fd(csv_fd)
-    return all_rows
+        return read_known_craft_fd(csv_fd)
 
 
 def read_mid_db_file(csv_file: str = "") -> dict:
     """Read the MID_DB_FILE file into a `dict`."""
     csv_file = csv_file or aiscot.DEFAULT_MID_DB_FILE
-    Logger.debug(f"Reading MID DB file: {csv_file}")
-
-    mid_digits: list = []
-    mid_allocated_to: list = []
+    if Debug:
+        Logger.debug(f"Reading MID DB file: {csv_file}")
 
     with open(csv_file, encoding="UTF-8") as csv_fd:
         reader = DictReader(csv_fd)
-        for row in reader:
-            mid_digits.append(row["Digit"])
-            mid_allocated_to.append(row["Allocated to"])
-
-    return dict(zip(mid_digits, mid_allocated_to))
-
-
-_mid_db_cache: dict = {}
-
-
-def get_mid_db() -> dict:
-    """Get MID database, loading it only once (lazy initialization)."""
-    global _mid_db_cache
-    if not _mid_db_cache:
-        _mid_db_cache = read_mid_db_file()
-    return _mid_db_cache
+        return {row["Digit"]: row["Allocated to"] for row in reader}
 
 
 def read_ship_db_file(csv_file: str = "") -> list:
     """Read the SHIP_DB_FILE file into a `list`."""
     csv_file = csv_file or aiscot.DEFAULT_SHIP_DB_FILE
-    Logger.debug(f"Reading Ship DB file: {csv_file}")
+    if Debug:
+        Logger.debug(f"Reading Ship DB file: {csv_file}")
 
-    all_rows: list = []
     fields: list = ["MMSI", "name", "unk", "vtype"]
 
     with open(csv_file, "r", encoding="ISO-8859-1") as csv_fd:
-        reader = DictReader(csv_fd, fields)
-        for row in reader:
-            all_rows.append(row)
-        return all_rows
+        return list(DictReader(csv_fd, fields))
 
 
-_mid_db_cache = {}
-_ship_db_cache = []
+_mid_db_cache: dict = {}
+_ship_db_cache: list = []
 
 
 def get_mid_db() -> dict:
@@ -143,10 +119,9 @@ def get_mid(mmsi: str) -> str:
     -------
     Country name in the MID Database from ITU.
     """
-    mid: str = str(mmsi)[:3]
+    mmsi = str(mmsi)
     mid_db = get_mid_db()
-    country: str = mid_db.get(mid, "")
-    return country
+    return mid_db.get(mmsi[:3], "")
 
 
 def get_aton(mmsi: str) -> bool:
@@ -162,7 +137,8 @@ def get_aton(mmsi: str) -> bool:
     :param mmsi: str MMSI as decoded from AIS data.
     :return: bool True if MMSI belongs to an AtoN, otherwise False.
     """
-    return str(mmsi)[:2] == "99"
+    mmsi = str(mmsi)
+    return mmsi[:2] == "99"
 
 
 def get_sar(mmsi: str) -> bool:
@@ -178,13 +154,10 @@ def get_sar(mmsi: str) -> bool:
     :param mmsi: str MMSI as decoded from AIS data.
     :return:
     """
-    sar = False
-    _mmsi = str(mmsi)
-    if _mmsi[:3] == "111":
-        sar = True
-    elif _mmsi[:5] in ["30386", "33885"]:  # US Coast Guard
-        sar = True
-    return sar
+    mmsi = str(mmsi)
+    if mmsi[:3] == "111":
+        return True
+    return mmsi[:5] in ("30386", "33885")  # US Coast Guard
 
 
 def get_crs(mmsi: str) -> bool:
@@ -195,16 +168,26 @@ def get_crs(mmsi: str) -> bool:
     :returns: True if CRS, False otherwise.
     :rtype: bool
     """
-    crs = False
+    mmsi = str(mmsi)
     # Known CRS:
     # 3669145
     # 3669708
     # 3669709
-    if str(mmsi)[:4] == "3669" and len(str(mmsi)) == 7:
-        crs = True
-    elif str(mmsi)[:6] == "003369":
-        crs = True
-    return crs
+    if mmsi[:4] == "3669" and len(mmsi) == 7:
+        return True
+    return mmsi[:6] == "003369"
+
+
+_ship_db_dict_cache: dict = {}
+
+
+def get_ship_db_dict() -> dict:
+    """Get ship database as dict indexed by MMSI for O(1) lookups."""
+    global _ship_db_dict_cache
+    if not _ship_db_dict_cache:
+        ship_db = get_ship_db()
+        _ship_db_dict_cache = {ship["MMSI"]: ship for ship in ship_db if "MMSI" in ship}
+    return _ship_db_dict_cache
 
 
 def get_shipname(mmsi: str) -> str:
@@ -213,8 +196,7 @@ def get_shipname(mmsi: str) -> str:
     :param mmsi: MMSI of the ship.
     :returns: Ship name.
     """
-    ship_db = get_ship_db()
-    for ship in ship_db:
-        if ship.get("MMSI") == str(mmsi):
-            return ship.get("name", "")
+    ship_db_dict = get_ship_db_dict()
+    if ship := ship_db_dict.get(mmsi):
+        return ship.get("name", "")
     return ""

@@ -87,17 +87,19 @@ def ais_to_cot(
     config = config or {}
     remarks_fields: list = []
 
+    # Extract and validate required fields with optimized lookups
     lat: float = float(
-        craft.get("lat", craft.get("LATITUDE", craft.get("latitude", "0")))
+        craft.get("lat") or craft.get("LATITUDE") or craft.get("latitude") or "0"
     )
     lon: float = float(
-        craft.get("lon", craft.get("LONGITUDE", craft.get("longitude", "0")))
+        craft.get("lon") or craft.get("LONGITUDE") or craft.get("longitude") or "0"
     )
-    mmsi: str = str(craft.get("mmsi", craft.get("MMSI", "")))
+    mmsi: str = str(craft.get("mmsi") or craft.get("MMSI") or "")
 
     # At least these three must exist, but may have different names depending on the
     # AIS source:
-    Logger.debug(f"lat={lat} lon={lon} mmsi={mmsi}")
+    if Debug:
+        Logger.debug(f"lat={lat} lon={lon} mmsi={mmsi}")
     if not all([lat, lon, mmsi]):
         Logger.error("Missing lat, lon, or mmsi.")
         return None
@@ -105,7 +107,8 @@ def ais_to_cot(
     aton: bool = aisfunc.get_aton(mmsi)
     # If IGNORE_ATON is set and this is an Aid to Naviation, we'll ignore it.
     if aton and config.get("IGNORE_ATON"):
-        Logger.debug(f"Ignoring AtoN: {mmsi}")
+        if Debug:
+            Logger.debug(f"Ignoring AtoN: {mmsi}")
         return None
 
     uid: str = f"MMSI-{mmsi}"
@@ -121,19 +124,23 @@ def ais_to_cot(
     )
 
     cot_host_id: str = str(config.get("COT_HOST_ID") or "")
+    cot_icon = config.get("COT_ICON")
+    cot_access = config.get("COT_ACCESS", pytak.DEFAULT_COT_ACCESS)
 
     xais: Element = Element("__ais")
     xais.set("cot_host_id", cot_host_id)
 
-    ais_name: str = str(
-        craft.get("name") or craft.get("NAME") or ""
-    ).replace("@", "").strip()
-    shipname: str = str(craft.get("shipname") or aisfunc.get_shipname(mmsi) or "")
-    vessel_type: str = str(
-        craft.get("type") or craft.get("TYPE") or craft.get("veselType") or ""
-    )
-
-    cot_icon = config.get("COT_ICON")
+    # Optimize name extraction - avoid redundant str() conversions
+    ais_name_raw = craft.get("name") or craft.get("NAME") or ""
+    ais_name: str = str(ais_name_raw).replace("@", "").strip() if ais_name_raw else ""
+    
+    shipname: str = ""
+    if temp := (craft.get("shipname") or aisfunc.get_shipname(mmsi)):
+        shipname = str(temp)
+    
+    vessel_type: str = ""
+    if temp := (craft.get("type") or craft.get("TYPE") or craft.get("veselType")):
+        vessel_type = str(temp)
 
     if ais_name:
         remarks_fields.append(f"AIS Name: {ais_name}")
@@ -159,13 +166,11 @@ def ais_to_cot(
             cot_type = "a-f" + cot_type[3:]
 
     if vessel_type:
-        ais_name = shipname
         remarks_fields.append(f"Type: {vessel_type}")
-        xais.set("vessel_type", str(vessel_type))
+        xais.set("vessel_type", vessel_type)
 
-    if mmsi:
-        remarks_fields.append(f"MMSI: {mmsi}")
-        xais.set("mmsi", str(mmsi))
+    remarks_fields.append(f"MMSI: {mmsi}")
+    xais.set("mmsi", mmsi)
 
     xais.set("aton", str(aton))
     if aton:
@@ -196,11 +201,11 @@ def ais_to_cot(
     # AIS Speed over ground: 0.1-knot (0.19 km/h) resolution from
     #                    0 to 102 knots (189 km/h)
     # COT Speed is meters/second
-    sog: Optional[float] = craft.get("speed", craft.get("SPEED", craft.get("SOG", "0")))
-    if sog:
-        sog = float(sog) * 0.1 / 1.944
-    if sog and sog != 0.0:
-        track.set("speed", str(sog))
+    # Pre-computed constant: 0.1 / 1.944 = 0.05144
+    if sog := (craft.get("speed") or craft.get("SPEED") or craft.get("SOG")):
+        sog_ms = float(sog) * 0.05144
+        if sog_ms != 0.0:
+            track.set("speed", str(sog_ms))
 
     # Contact
     contact = Element("contact")
@@ -209,8 +214,7 @@ def ais_to_cot(
     remarks = Element("remarks")
     if cot_host_id:
         remarks_fields.append(cot_host_id)
-    _remarks = " ".join(filter(None, remarks_fields))
-    remarks.text = _remarks
+    remarks.text = " ".join(remarks_fields)
 
     detail = Element("detail")
     detail.append(track)
@@ -234,7 +238,7 @@ def ais_to_cot(
         "stale": cot_stale,
     }
     cot = pytak.gen_cot_xml(**cot_d)
-    cot.set("access", config.get("COT_ACCESS", pytak.DEFAULT_COT_ACCESS))
+    cot.set("access", cot_access)
 
     _detail = cot.findall("detail")[0]
     flowtags = _detail.findall("_flow-tags_")
@@ -258,5 +262,6 @@ def cot_to_xml(
     )
     if cot is not None:
         return b"\n".join([pytak.DEFAULT_XML_DECLARATION, ET.tostring(cot)])
-    Logger.debug("No CoT XML generated.")
+    if Debug:
+        Logger.debug("No CoT XML generated.")
     return None

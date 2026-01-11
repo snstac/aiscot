@@ -271,8 +271,9 @@ class AISWorker(pytak.QueueWorker):
             local_addr=(host, port),
         )
         await ready.wait()
-        while 1:
-            await asyncio.sleep(0.01)
+        # Keep the coroutine alive without spinning the CPU
+        while True:
+            await asyncio.sleep(3600)  # Sleep for 1 hour, will wake on events
 
     async def _poll_feed(self) -> None:
         """Poll a feed URL for AIS data."""

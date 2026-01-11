@@ -108,8 +108,8 @@ def read_ship_db_file(csv_file: str = "") -> list:
         return all_rows
 
 
-_mid_db_cache: dict = {}
-_ship_db_cache: list = []
+_mid_db_cache = {}
+_ship_db_cache = []
 
 
 def get_mid_db() -> dict:

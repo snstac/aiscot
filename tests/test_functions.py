@@ -126,8 +126,8 @@ def test_ais_to_cot(sample_data_pyAISm):
 
     point = cot.findall("point")
     assert point[0].tag == "point"
-    assert point[0].attrib["lat"] == "37.81691333333333"
-    assert point[0].attrib["lon"] == "-122.51208"
+    assert point[0].attrib["lat"] == "37.8169"
+    assert point[0].attrib["lon"] == "-122.5121"
     assert point[0].attrib["hae"] == "0.0"
 
     detail = cot.findall("detail")
@@ -162,8 +162,8 @@ def test_ais_to_cot_with_known_craft(sample_data_pyAISm, sample_known_craft):
 
     point = cot.findall("point")
     assert point[0].tag == "point"
-    assert point[0].attrib["lat"] == "37.81691333333333"
-    assert point[0].attrib["lon"] == "-122.51208"
+    assert point[0].attrib["lat"] == "37.8169"
+    assert point[0].attrib["lon"] == "-122.5121"
     assert point[0].attrib["hae"] == "0.0"
 
     detail = cot.findall("detail")

@@ -1,3 +1,7 @@
+## AISCOT 7.1.4
+
+- Limit reported position precision to a maximum of 4 decimal places (~11 m).
+
 ## AISCOT 7.1.0
 
 - Happy New Year 2025!

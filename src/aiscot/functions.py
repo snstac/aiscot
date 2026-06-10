@@ -87,12 +87,16 @@ def ais_to_cot(
     config = config or {}
     remarks_fields: list = []
 
-    # Extract and validate required fields with optimized lookups
-    lat: float = float(
-        craft.get("lat") or craft.get("LATITUDE") or craft.get("latitude") or "0"
+    # Extract and validate required fields with optimized lookups.
+    # Position is rounded to a maximum of 4 decimal places (~11 m) to limit the
+    # precision of reported coordinates.
+    lat: float = round(
+        float(craft.get("lat") or craft.get("LATITUDE") or craft.get("latitude") or "0"),
+        4,
     )
-    lon: float = float(
-        craft.get("lon") or craft.get("LONGITUDE") or craft.get("longitude") or "0"
+    lon: float = round(
+        float(craft.get("lon") or craft.get("LONGITUDE") or craft.get("longitude") or "0"),
+        4,
     )
     mmsi: str = str(craft.get("mmsi") or craft.get("MMSI") or "")
 

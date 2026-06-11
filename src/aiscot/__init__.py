@@ -27,10 +27,17 @@ from .constants import (  # NOQA
     DEFAULT_POLL_INTERVAL,
     DEFAULT_MID_DB_FILE,
     DEFAULT_SHIP_DB_FILE,
+    DEFAULT_SENSOR_KEEPALIVE_PERIOD,
+    DEFAULT_SENSOR_LAT,
+    DEFAULT_SENSOR_LON,
+    DEFAULT_SENSOR_HAE,
+    DEFAULT_SENSOR_ID,
+    DEFAULT_SENSOR_COT_TYPE,
+    DEFAULT_SENSOR_PAYLOAD_TYPE,
 )
 
-from .functions import create_tasks, cot_to_xml, ais_to_cot  # NOQA
+from .functions import create_tasks, cot_to_xml, ais_to_cot, gen_sensor_cot  # NOQA
 
 from .ais_functions import get_known_craft  # NOQA
 
-from .classes import AISWorker  # NOQA
+from .classes import AISWorker, SensorWorker  # NOQA

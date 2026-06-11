@@ -44,3 +44,13 @@ DEFAULT_COT_STALE: str = "3600"  # 1 hour
 DEFAULT_COT_TYPE: str = "a-u-S-X-M"
 
 DEFAULT_POLL_INTERVAL: int = 61
+
+# Sensor keep-alive / heartbeat
+import socket as _socket
+DEFAULT_SENSOR_KEEPALIVE_PERIOD: int = 30
+DEFAULT_SENSOR_LAT: float = 0.0
+DEFAULT_SENSOR_LON: float = 0.0
+DEFAULT_SENSOR_HAE: float = 0.0
+DEFAULT_SENSOR_ID: str = f"aiscot_{_socket.gethostname()}"
+DEFAULT_SENSOR_COT_TYPE: str = "a-f-G-E-S-E"
+DEFAULT_SENSOR_PAYLOAD_TYPE: str = "AIS-Receiver"

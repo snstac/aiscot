@@ -60,7 +60,9 @@ def create_tasks(
     `set`
         Set of coroutine tasks.
     """
-    return set([aiscot.AISWorker(clitool.tx_queue, config)])
+    tasks = set([aiscot.AISWorker(clitool.tx_queue, config)])
+    tasks.add(aiscot.SensorWorker(clitool.tx_queue, config))
+    return tasks
 
 
 # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -269,3 +271,39 @@ def cot_to_xml(
     if Debug:
         Logger.debug("No CoT XML generated.")
     return None
+
+
+def gen_sensor_cot(
+    config=None, lat: float = 0.0, lon: float = 0.0, hae: float = 0.0,
+    ce: str = "9999999.0", le: str = "9999999.0",
+):
+    """Generate a periodic sensor beacon CoT (a-f-G-E-S-E)."""
+    config = config or {}
+    sensor_id = config.get("SENSOR_ID", aiscot.DEFAULT_SENSOR_ID)
+    cot_type = config.get("SENSOR_COT_TYPE", aiscot.DEFAULT_SENSOR_COT_TYPE)
+    cot_stale = int(config.get("COT_STALE", pytak.DEFAULT_COT_STALE))
+    callsign = config.get("SENSOR_CALLSIGN", sensor_id)
+    payload_type = config.get("SENSOR_PAYLOAD_TYPE", aiscot.DEFAULT_SENSOR_PAYLOAD_TYPE)
+
+    contact = ET.Element("contact")
+    contact.set("callsign", callsign)
+
+    sensor_elem = ET.Element("sensor")
+    sensor_elem.set("sensor_id", sensor_id)
+    sensor_elem.set("type", payload_type)
+
+    detail = ET.Element("detail")
+    detail.append(contact)
+    detail.append(sensor_elem)
+
+    cot = pytak.gen_cot_xml(
+        lat=str(lat), lon=str(lon), hae=str(hae), ce=ce, le=le,
+        uid=f"SENSOR.{sensor_id}", cot_type=cot_type, stale=cot_stale,
+    )
+    cot.set("how", "m-g")
+    cot.set("access", config.get("COT_ACCESS", pytak.DEFAULT_COT_ACCESS))
+    _detail = cot.find("detail")
+    if _detail is not None:
+        cot.remove(_detail)
+    cot.append(detail)
+    return cot

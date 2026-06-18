@@ -234,8 +234,8 @@ def ais_to_cot(
         detail.append(usericon)
 
     cot_d = {
-        "lat": str(lat),
-        "lon": str(lon),
+        "lat": lat,
+        "lon": lon,
         "ce": "9999999.0",
         "le": "9999999.0",
         "hae": "0.0",
@@ -297,7 +297,7 @@ def gen_sensor_cot(
     detail.append(sensor_elem)
 
     cot = pytak.gen_cot_xml(
-        lat=str(lat), lon=str(lon), hae=str(hae), ce=ce, le=le,
+        lat=lat, lon=lon, hae=str(hae), ce=ce, le=le,
         uid=f"SENSOR.{sensor_id}", cot_type=cot_type, stale=cot_stale,
     )
     cot.set("how", "m-g")

@@ -1,3 +1,8 @@
+## AISCoT 7.2.1
+
+- Use PyTAK shared CoT event, point, detail, remarks, and serialization helpers.
+- Require `pytak >= 7.3.12`.
+
 ## AISCoT 7.2.0
 
 - Add `SensorWorker`: periodic `a-f-G-E-S-E` sensor CoT heartbeat every `SENSOR_KEEPALIVE_PERIOD` seconds (default 30).

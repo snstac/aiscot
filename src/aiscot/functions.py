@@ -25,7 +25,7 @@ import xml.etree.ElementTree as ET
 
 from configparser import SectionProxy
 from typing import Optional, Set, Union
-from xml.etree.ElementTree import tostring, Element
+from xml.etree.ElementTree import Element
 
 import pytak
 import aiscot
@@ -217,42 +217,23 @@ def ais_to_cot(
     contact = Element("contact")
     contact.set("callsign", str(callsign))
 
-    remarks = Element("remarks")
-    if cot_host_id:
-        remarks_fields.append(cot_host_id)
-    remarks.text = " ".join(remarks_fields)
+    remarks = pytak.add_remarks(Element("detail"), remarks_fields + [cot_host_id])
 
-    detail = Element("detail")
-    detail.append(track)
-    detail.append(contact)
-    detail.append(remarks)
-    detail.append(xais)
+    detail_children = [track, contact, remarks, xais]
 
     if cot_icon:
         usericon = ET.Element("usericon")
         usericon.set("iconsetpath", cot_icon)
-        detail.append(usericon)
+        detail_children.append(usericon)
 
-    cot_d = {
-        "lat": lat,
-        "lon": lon,
-        "ce": "9999999.0",
-        "le": "9999999.0",
-        "hae": "0.0",
-        "uid": uid,
-        "cot_type": cot_type,
-        "stale": cot_stale,
-    }
-    cot = pytak.gen_cot_xml(**cot_d)
-    cot.set("access", cot_access)
-
-    _detail = cot.findall("detail")[0]
-    flowtags = _detail.findall("_flow-tags_")
-    detail.extend(flowtags)
-    cot.remove(_detail)
-    cot.append(detail)
-
-    return cot
+    return pytak.cot_event(
+        uid=uid,
+        cot_type=cot_type,
+        stale=cot_stale,
+        point=pytak.cot_point(lat=lat, lon=lon, ce="9999999.0", hae="0.0", le="9999999.0"),
+        detail=pytak.cot_detail(*detail_children, flow_tag_host_id=cot_host_id),
+        access=cot_access,
+    )
 
 
 def cot_to_xml(
@@ -267,7 +248,7 @@ def cot_to_xml(
         data, config, known_craft
     )
     if cot is not None:
-        return b"\n".join([pytak.DEFAULT_XML_DECLARATION, ET.tostring(cot)])
+        return pytak.serialize_cot(cot)
     if Debug:
         Logger.debug("No CoT XML generated.")
     return None
@@ -292,18 +273,12 @@ def gen_sensor_cot(
     sensor_elem.set("sensor_id", sensor_id)
     sensor_elem.set("type", payload_type)
 
-    detail = ET.Element("detail")
-    detail.append(contact)
-    detail.append(sensor_elem)
-
-    cot = pytak.gen_cot_xml(
-        lat=lat, lon=lon, hae=str(hae), ce=ce, le=le,
-        uid=f"SENSOR.{sensor_id}", cot_type=cot_type, stale=cot_stale,
+    return pytak.cot_event(
+        uid=f"SENSOR.{sensor_id}",
+        cot_type=cot_type,
+        stale=cot_stale,
+        point=pytak.cot_point(lat=lat, lon=lon, hae=hae, ce=ce, le=le),
+        detail=pytak.cot_detail(contact, sensor_elem, flow_tag=False),
+        how="m-g",
+        access=config.get("COT_ACCESS", pytak.DEFAULT_COT_ACCESS),
     )
-    cot.set("how", "m-g")
-    cot.set("access", config.get("COT_ACCESS", pytak.DEFAULT_COT_ACCESS))
-    _detail = cot.find("detail")
-    if _detail is not None:
-        cot.remove(_detail)
-    cot.append(detail)
-    return cot

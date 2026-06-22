@@ -1,3 +1,8 @@
+## AISCOT (Unreleased)
+
+- Stamp the CoT `_flow-tags_` with `COT_HOST_ID` when set (falls back to pytak's
+  default host id), so a functional source name appears in the CoT flow.
+
 ## AISCOT 7.1.4
 
 - Limit reported position precision to a maximum of 4 decimal places (~11 m).

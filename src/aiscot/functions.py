@@ -245,8 +245,9 @@ def ais_to_cot(
     cot.set("access", cot_access)
 
     _detail = cot.findall("detail")[0]
-    flowtags = _detail.findall("_flow-tags_")
-    detail.extend(flowtags)
+    # Stamp the flow tag with COT_HOST_ID (falls back to pytak's default host id
+    # when unset), rather than re-using gen_cot_xml's default-host-id flow tag.
+    detail.append(pytak.cot_flow_tags(cot_host_id or None))
     cot.remove(_detail)
     cot.append(detail)
 

@@ -57,4 +57,24 @@ AISCOT has the following built-in configuration parameters:
 
     Ignore AIS from Aids to Naviation (buoys, etc).
 
+* **`VESSEL_NAME_PREFIX`**:
+    * Default: ``True``
+
+    Prepend the conventional ship-type prefix to vessel callsigns, the way mariners name traffic: ``T/B Delores`` (tug/towing), ``P/V Golden Gate`` (pilot), ``M/V`` (cargo), ``M/T`` (tanker), ``F/V`` (fishing), ``S/V`` (sailing), ``SAR``, ``A/P``, ``L/E``. Names already carrying a prefix pass verbatim; bare-MMSI callsigns stay bare.
+
+* **`SHIPCLASS_COLORS`**:
+    * Default: ``True``
+
+    Color each vessel marker by its AIS-catcher ship class (the de-facto standard AIS viewer palette): tankers red, cargo spring green, passenger blue, special craft (pilot/SAR/tug/law) brown, high-speed craft yellow, fishing deep pink, sailing/pleasure magenta, everything else light azure. Emitted as a CoT ``<color argb=".."/>`` detail element; works on any TAK client.
+
+* **`SHIPCLASS_ICONS`**:
+    * Default: ``False``
+
+    Set each vessel marker's icon by ship class from the bundled ``ais-ships-iconset.zip`` ATAK iconset: solid dart when underway, circle when stopped, diamond for AtoN / base station / SART, colored with the AIS-catcher palette. Clients must import the iconset first (ATAK Settings → Tool Preferences → Point Dropper → Iconset Manager), so this is opt-in. ``COT_ICON`` still takes precedence. The zip ships with the package under ``aiscot/data/`` and can be regenerated with ``scripts/build_ais_iconset.py``.
+
+* **`UNDERWAY_ONLY`**:
+    * Default: ``False``
+
+    Only forward vessels that are underway (SOG ≥ 0.5 knots, or a non-parked navigation status when SOG is missing); parked hulls (at anchor, moored, aground) are dropped. At busy anchorages the marina clutter otherwise drowns the underway traffic picture. SOG outranks navigation status — crews leave "Underway" set at the dock and "Moored" set while sailing. Vessels reporting neither SOG nor navigation status pass through, as do AtoN and USCG SAR/CRS craft.
+
 Additional configuration parameters, including TLS & TAK Server configuration, are included in the [PyTAK Configuration](https://pytak.readthedocs.io/en/stable/configuration/) documentation.

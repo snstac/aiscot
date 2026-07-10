@@ -34,6 +34,10 @@ from .constants import (  # NOQA
     DEFAULT_SENSOR_ID,
     DEFAULT_SENSOR_COT_TYPE,
     DEFAULT_SENSOR_PAYLOAD_TYPE,
+    DEFAULT_VESSEL_NAME_PREFIX,
+    DEFAULT_SHIPCLASS_COLORS,
+    DEFAULT_SHIPCLASS_ICONS,
+    DEFAULT_UNDERWAY_ONLY,
 )
 
 from .functions import create_tasks, cot_to_xml, ais_to_cot, gen_sensor_cot  # NOQA

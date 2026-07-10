@@ -258,3 +258,83 @@ def test_ais_to_cot(sample_data_pyAISm):
     cot: bytes = aiscot.cot_to_xml(sample_data_pyAISm)
     assert b"a-f-S-X-M" in cot
     assert b"MMSI-366892000" in cot
+
+
+@pytest.fixture
+def sample_tug(sample_data_pyAISm):
+    """A tug with static & voyage data (name + ship type) merged in."""
+    craft = dict(sample_data_pyAISm)
+    craft["name"] = "DELORES"
+    craft["shiptype"] = 52
+    return craft
+
+
+def test_ais_to_cot_vessel_name_prefix(sample_tug):
+    """Ship-type name prefix is prepended to the callsign by default."""
+    cot = aiscot.ais_to_cot(sample_tug)
+    contact = cot.findall("detail")[0].findall("contact")
+    assert contact[0].attrib["callsign"] == "T/B DELORES"
+
+
+def test_ais_to_cot_vessel_name_prefix_disabled(sample_tug):
+    cot = aiscot.ais_to_cot(sample_tug, {"VESSEL_NAME_PREFIX": False})
+    contact = cot.findall("detail")[0].findall("contact")
+    assert contact[0].attrib["callsign"] == "DELORES"
+
+
+def test_ais_to_cot_shipclass_color(sample_data_pyAISm):
+    """Ship-class <color argb> is emitted by default (tanker = red)."""
+    sample_data_pyAISm["shiptype"] = 80
+    cot = aiscot.ais_to_cot(sample_data_pyAISm)
+    color = cot.findall("detail")[0].findall("color")
+    assert color[0].attrib["argb"] == "-65536"
+
+
+def test_ais_to_cot_shipclass_color_disabled(sample_data_pyAISm):
+    cot = aiscot.ais_to_cot(sample_data_pyAISm, {"SHIPCLASS_COLORS": False})
+    assert not cot.findall("detail")[0].findall("color")
+
+
+def test_ais_to_cot_shipclass_icons(sample_data_pyAISm):
+    """SHIPCLASS_ICONS adds a usericon from the bundled iconset (opt-in)."""
+    sample_data_pyAISm["shiptype"] = 80
+    cot = aiscot.ais_to_cot(sample_data_pyAISm, {"SHIPCLASS_ICONS": True})
+    usericon = cot.findall("detail")[0].findall("usericon")
+    assert usericon[0].attrib["iconsetpath"] == (
+        f"{aiscot.shipclass.AIS_SHIPS_ICONSET_UID}/Ships/tanker_underway.png"
+    )
+
+
+def test_ais_to_cot_shipclass_icons_default_off(sample_data_pyAISm):
+    cot = aiscot.ais_to_cot(sample_data_pyAISm)
+    assert not cot.findall("detail")[0].findall("usericon")
+
+
+def test_ais_to_cot_cot_icon_beats_shipclass_icon(sample_data_pyAISm):
+    """An explicit COT_ICON outranks the ship-class icon."""
+    config = {"SHIPCLASS_ICONS": True, "COT_ICON": "some-uid/Group/icon.png"}
+    cot = aiscot.ais_to_cot(sample_data_pyAISm, config)
+    usericon = cot.findall("detail")[0].findall("usericon")
+    assert usericon[0].attrib["iconsetpath"] == "some-uid/Group/icon.png"
+
+
+def test_ais_to_cot_underway_only(sample_data_pyAISm):
+    """UNDERWAY_ONLY drops parked hulls; underway traffic still flows."""
+    # Underway (speed 64 = 6.4 knots): passes.
+    assert aiscot.ais_to_cot(sample_data_pyAISm, {"UNDERWAY_ONLY": True}) is not None
+    # SOG zero: suppressed.
+    parked = dict(sample_data_pyAISm)
+    parked["speed"] = 0
+    assert aiscot.ais_to_cot(parked, {"UNDERWAY_ONLY": True}) is None
+    # No SOG, Moored: suppressed.
+    moored = dict(sample_data_pyAISm)
+    del moored["speed"]
+    moored["status"] = 5
+    assert aiscot.ais_to_cot(moored, {"UNDERWAY_ONLY": True}) is None
+    # Default: everything passes.
+    assert aiscot.ais_to_cot(parked) is not None
+
+
+def test_ais_to_cot_underway_only_keeps_aton(sample_aton):
+    """AtoN are never underway; UNDERWAY_ONLY must not drop them."""
+    assert aiscot.ais_to_cot(sample_aton, {"UNDERWAY_ONLY": True}) is not None

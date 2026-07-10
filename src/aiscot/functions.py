@@ -30,10 +30,22 @@ from xml.etree.ElementTree import Element
 import pytak
 import aiscot
 import aiscot.ais_functions as aisfunc
+import aiscot.shipclass as shipclass
 
 APP_NAME = "aiscot"
 Logger = logging.getLogger(__name__)
 Debug = bool(os.getenv("DEBUG", False))
+
+
+def cfg_bool(value, default: bool = False) -> bool:
+    """Parse an INI/env-style boolean config value ("true", "1", "yes", ...).
+
+    Unset or empty values fall back to `default`; "False"/"no"/"0" are
+    False (plain `bool()` on config strings would treat "False" as True).
+    """
+    if value is None or value == "":
+        return default
+    return str(value).strip().lower() in pytak.BOOLEAN_TRUTH
 
 
 def create_tasks(
@@ -163,6 +175,13 @@ def ais_to_cot(
     else:
         callsign = mmsi
 
+    # "T/B Delores", "P/V Golden Gate": prepend the conventional ship-type
+    # name prefix. Bare-MMSI callsigns stay bare.
+    if _name and cfg_bool(
+        config.get("VESSEL_NAME_PREFIX"), aiscot.DEFAULT_VESSEL_NAME_PREFIX
+    ):
+        callsign = shipclass.prefix_vessel_name(callsign, craft)
+
     country: str = aisfunc.get_mid(mmsi)
     if country:
         cot_type = "a-n" + cot_type[3:]
@@ -199,6 +218,18 @@ def ais_to_cot(
         callsign = f"USCG CRS {callsign}"
         remarks_fields.append(f"USCG CRS: {crs}")
 
+    # Optionally drop parked hulls — at busy anchorages the marina clutter
+    # drowns the underway traffic picture. SOG outranks nav status (see
+    # `shipclass.get_underway`); vessels reporting neither pass through.
+    if (
+        cfg_bool(config.get("UNDERWAY_ONLY"), aiscot.DEFAULT_UNDERWAY_ONLY)
+        and not (aton or uscg or crs)
+        and shipclass.get_underway(craft) is False
+    ):
+        if Debug:
+            Logger.debug(f"Ignoring vessel not underway: {mmsi}")
+        return None
+
     track = Element("track")
     heading: Optional[float] = craft.get("heading", craft.get("HEADING"))
     if heading:
@@ -221,10 +252,29 @@ def ais_to_cot(
 
     detail_children = [track, contact, remarks, xais]
 
+    vessel_class: str = shipclass.classify_vessel(mmsi, shipclass.get_shiptype(craft))
+
+    # AIS-catcher style ship-class marker icon (dart underway / circle
+    # stopped) from the bundled ais-ships-iconset.zip. Clients must import
+    # the iconset first, so this is opt-in; COT_ICON still wins.
+    if not cot_icon and cfg_bool(
+        config.get("SHIPCLASS_ICONS"), aiscot.DEFAULT_SHIPCLASS_ICONS
+    ):
+        underway: bool = shipclass.get_underway(craft) is True
+        cot_icon = shipclass.vessel_iconsetpath(vessel_class, underway)
+
     if cot_icon:
         usericon = ET.Element("usericon")
         usericon.set("iconsetpath", cot_icon)
         detail_children.append(usericon)
+
+    # AIS-catcher style ship-class marker color (tankers red, cargo spring
+    # green, passenger blue, ...) — works on any TAK client, no iconset
+    # import needed.
+    if cfg_bool(config.get("SHIPCLASS_COLORS"), aiscot.DEFAULT_SHIPCLASS_COLORS):
+        color = ET.Element("color")
+        color.set("argb", str(shipclass.shipclass_argb(vessel_class)))
+        detail_children.append(color)
 
     return pytak.cot_event(
         uid=uid,

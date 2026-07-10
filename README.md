@@ -10,6 +10,8 @@ AISCOT provides critical maritime domain awareness by streaming real-time vessel
 - **Native TAK Integration**: Seamless compatibility with ATAK, WinTAK, iTAK, TAK Server & TAKX using Cursor on Target (CoT) protocols
 - **Multi-source Data Fusion**: Support for RF AIS transmissions, local NMEA feeds, and Internet-based AIS aggregators
 - **Comprehensive Vessel Intelligence**: Display vessel icons, attitude, type, track history, bearing, speed, callsign, and maritime identifiers
+- **AIS-catcher Style Vessel Markers**: Ship-class marker colors (tankers red, cargo green, passenger blue, ...), conventional callsign prefixes (``T/B``, ``P/V``, ``M/V``, ...), and an optional bundled ATAK iconset ([ais-ships-iconset.zip](https://github.com/snstac/aiscot/raw/main/src/aiscot/data/ais-ships-iconset.zip)) with dart/circle underway/stopped icons
+- **Underway-only Filtering**: Optionally drop parked hulls (at anchor, moored, aground) so anchorage clutter doesn't drown the traffic picture
 - **Government Data Access**: Integration with [US Department of Transportation SeaVision](https://seavision.volpe.dot.gov/) for enhanced coverage
 
 ## Use Cases

@@ -45,6 +45,12 @@ DEFAULT_COT_TYPE: str = "a-u-S-X-M"
 
 DEFAULT_POLL_INTERVAL: int = 61
 
+# AIS-catcher style styling (see aiscot.shipclass):
+DEFAULT_VESSEL_NAME_PREFIX: bool = True  # "T/B Delores", "P/V Golden Gate"
+DEFAULT_SHIPCLASS_COLORS: bool = True  # <color argb> by ship class
+DEFAULT_SHIPCLASS_ICONS: bool = False  # needs ais-ships-iconset.zip imported
+DEFAULT_UNDERWAY_ONLY: bool = False  # drop parked (anchored/moored) vessels
+
 # Sensor keep-alive / heartbeat
 import socket as _socket
 DEFAULT_SENSOR_KEEPALIVE_PERIOD: int = 30

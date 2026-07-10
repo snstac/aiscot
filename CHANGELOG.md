@@ -1,3 +1,23 @@
+## AISCoT 7.3.0
+
+- AIS-catcher style vessel styling (mapping & palette re-implemented from
+  [AIS-catcher](https://github.com/jvde-github/AIS-catcher)'s published behavior;
+  no GPL assets copied):
+  - New `aiscot.shipclass` module: MMSI + AIS ship type → ship class
+    (tanker/cargo/passenger/special/highspeed/fishing/classb/aton/station/sartepirb).
+  - `SHIPCLASS_COLORS` (default `True`): CoT `<color argb>` marker color by ship
+    class — tankers red, cargo spring green, passenger blue, etc.
+  - `SHIPCLASS_ICONS` (default `False`): CoT `<usericon>` from the new bundled
+    `ais-ships-iconset.zip` ATAK iconset — dart when underway, circle when
+    stopped, diamond for AtoN/base station/SART. `COT_ICON` still wins.
+  - New `scripts/build_ais_iconset.py` regenerates the iconset (pure stdlib).
+- `VESSEL_NAME_PREFIX` (default `True`): conventional ship-type callsign
+  prefixes — `T/B Delores`, `P/V Golden Gate`, `M/V`, `M/T`, `F/V`, `S/V`, `SAR`,
+  `A/P`, `L/E`. Already-prefixed and bare-MMSI callsigns pass verbatim.
+- `UNDERWAY_ONLY` (default `False`): drop parked hulls (SOG < 0.5 kts, or
+  anchored/moored/aground when SOG is missing). SOG outranks nav status; AtoN
+  and USCG SAR/CRS are exempt.
+
 ## AISCoT 7.2.1
 
 - Use PyTAK shared CoT event, point, detail, remarks, and serialization helpers.

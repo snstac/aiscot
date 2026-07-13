@@ -122,9 +122,23 @@ def ais_to_cot(
         Logger.error("Missing lat, lon, or mmsi.")
         return None
 
+    # Parse the styling/filter flags once per message (hot path).
+    vessel_name_prefix: bool = cfg_bool(
+        config.get("VESSEL_NAME_PREFIX"), aiscot.DEFAULT_VESSEL_NAME_PREFIX
+    )
+    shipclass_colors: bool = cfg_bool(
+        config.get("SHIPCLASS_COLORS"), aiscot.DEFAULT_SHIPCLASS_COLORS
+    )
+    shipclass_icons: bool = cfg_bool(
+        config.get("SHIPCLASS_ICONS"), aiscot.DEFAULT_SHIPCLASS_ICONS
+    )
+    underway_only: bool = cfg_bool(
+        config.get("UNDERWAY_ONLY"), aiscot.DEFAULT_UNDERWAY_ONLY
+    )
+
     aton: bool = aisfunc.get_aton(mmsi)
     # If IGNORE_ATON is set and this is an Aid to Naviation, we'll ignore it.
-    if aton and config.get("IGNORE_ATON"):
+    if aton and cfg_bool(config.get("IGNORE_ATON")):
         if Debug:
             Logger.debug(f"Ignoring AtoN: {mmsi}")
         return None
@@ -156,8 +170,16 @@ def ais_to_cot(
     if temp := (craft.get("shipname") or aisfunc.get_shipname(mmsi)):
         shipname = str(temp)
     
+    # NB: lowercase "type" is the AIS *message* type on the pyAISm path,
+    # never a ship type — keep it out of the remarks/classification keys.
+    shiptype: str = shipclass.get_shiptype(craft)
     vessel_type: str = ""
-    if temp := (craft.get("type") or craft.get("TYPE") or craft.get("veselType")):
+    if temp := (
+        craft.get("shiptype")
+        or craft.get("TYPE")
+        or craft.get("vesselType")
+        or craft.get("veselType")
+    ):
         vessel_type = str(temp)
 
     if ais_name:
@@ -176,10 +198,9 @@ def ais_to_cot(
         callsign = mmsi
 
     # "T/B Delores", "P/V Golden Gate": prepend the conventional ship-type
-    # name prefix. Bare-MMSI callsigns stay bare.
-    if _name and cfg_bool(
-        config.get("VESSEL_NAME_PREFIX"), aiscot.DEFAULT_VESSEL_NAME_PREFIX
-    ):
+    # name prefix. Bare-MMSI callsigns stay bare, and operator-curated
+    # KNOWN_CRAFT names pass verbatim.
+    if _name and vessel_name_prefix and not known_craft.get("NAME"):
         callsign = shipclass.prefix_vessel_name(callsign, craft)
 
     country: str = aisfunc.get_mid(mmsi)
@@ -218,13 +239,22 @@ def ais_to_cot(
         callsign = f"USCG CRS {callsign}"
         remarks_fields.append(f"USCG CRS: {crs}")
 
+    vessel_class: str = shipclass.classify_vessel(mmsi, shiptype)
+
+    underway: Optional[bool] = None
+    if underway_only or shipclass_icons:
+        underway = shipclass.get_underway(craft)
+
     # Optionally drop parked hulls — at busy anchorages the marina clutter
     # drowns the underway traffic picture. SOG outranks nav status (see
     # `shipclass.get_underway`); vessels reporting neither pass through.
+    # Never dropped: AtoN, USCG SAR/CRS, SART/EPIRB/MOB distress beacons,
+    # and operator watch-listed KNOWN_CRAFT.
     if (
-        cfg_bool(config.get("UNDERWAY_ONLY"), aiscot.DEFAULT_UNDERWAY_ONLY)
-        and not (aton or uscg or crs)
-        and shipclass.get_underway(craft) is False
+        underway_only
+        and underway is False
+        and not (aton or uscg or crs or known_craft)
+        and vessel_class != shipclass.SHIPCLASS_SARTEPIRB
     ):
         if Debug:
             Logger.debug(f"Ignoring vessel not underway: {mmsi}")
@@ -235,14 +265,12 @@ def ais_to_cot(
     if heading:
         track.set("course", str(heading))
 
-    # AIS Speed over ground: 0.1-knot (0.19 km/h) resolution from
-    #                    0 to 102 knots (189 km/h)
-    # COT Speed is meters/second
-    # Pre-computed constant: 0.1 / 1.944 = 0.05144
-    if sog := (craft.get("speed") or craft.get("SPEED") or craft.get("SOG")):
-        sog_ms = float(sog) * 0.05144
-        if sog_ms != 0.0:
-            track.set("speed", str(sog_ms))
+    # CoT speed is m/s; shipclass.get_sog_ms scales each feed's SOG key
+    # (pyAISm raw 0.1-knot units, API knots) and drops the AIS
+    # "not available" sentinel.
+    sog_ms: Optional[float] = shipclass.get_sog_ms(craft)
+    if sog_ms:
+        track.set("speed", str(sog_ms))
 
     # Contact
     contact = Element("contact")
@@ -252,16 +280,11 @@ def ais_to_cot(
 
     detail_children = [track, contact, remarks, xais]
 
-    vessel_class: str = shipclass.classify_vessel(mmsi, shipclass.get_shiptype(craft))
-
     # AIS-catcher style ship-class marker icon (dart underway / circle
     # stopped) from the bundled ais-ships-iconset.zip. Clients must import
     # the iconset first, so this is opt-in; COT_ICON still wins.
-    if not cot_icon and cfg_bool(
-        config.get("SHIPCLASS_ICONS"), aiscot.DEFAULT_SHIPCLASS_ICONS
-    ):
-        underway: bool = shipclass.get_underway(craft) is True
-        cot_icon = shipclass.vessel_iconsetpath(vessel_class, underway)
+    if not cot_icon and shipclass_icons:
+        cot_icon = shipclass.vessel_iconsetpath(vessel_class, underway is True)
 
     if cot_icon:
         usericon = ET.Element("usericon")
@@ -271,7 +294,7 @@ def ais_to_cot(
     # AIS-catcher style ship-class marker color (tankers red, cargo spring
     # green, passenger blue, ...) — works on any TAK client, no iconset
     # import needed.
-    if cfg_bool(config.get("SHIPCLASS_COLORS"), aiscot.DEFAULT_SHIPCLASS_COLORS):
+    if shipclass_colors:
         color = ET.Element("color")
         color.set("argb", str(shipclass.shipclass_argb(vessel_class)))
         detail_children.append(color)

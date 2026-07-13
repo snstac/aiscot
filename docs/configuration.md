@@ -60,7 +60,7 @@ AISCOT has the following built-in configuration parameters:
 * **`VESSEL_NAME_PREFIX`**:
     * Default: ``True``
 
-    Prepend the conventional ship-type prefix to vessel callsigns, the way mariners name traffic: ``T/B Delores`` (tug/towing), ``P/V Golden Gate`` (pilot), ``M/V`` (cargo), ``M/T`` (tanker), ``F/V`` (fishing), ``S/V`` (sailing), ``SAR``, ``A/P``, ``L/E``. Names already carrying a prefix pass verbatim; bare-MMSI callsigns stay bare.
+    Prepend the conventional ship-type prefix to vessel callsigns, the way mariners name traffic: ``T/B Delores`` (tug/towing), ``P/V Golden Gate`` (pilot), ``M/V`` (cargo), ``M/T`` (tanker), ``F/V`` (fishing), ``S/V`` (sailing), ``SAR``, ``A/P``, ``L/E``. Names already carrying a prefix pass verbatim; bare-MMSI callsigns stay bare, and operator-curated ``KNOWN_CRAFT`` names are never rewritten.
 
 * **`SHIPCLASS_COLORS`**:
     * Default: ``True``
@@ -75,6 +75,6 @@ AISCOT has the following built-in configuration parameters:
 * **`UNDERWAY_ONLY`**:
     * Default: ``False``
 
-    Only forward vessels that are underway (SOG ≥ 0.5 knots, or a non-parked navigation status when SOG is missing); parked hulls (at anchor, moored, aground) are dropped. At busy anchorages the marina clutter otherwise drowns the underway traffic picture. SOG outranks navigation status — crews leave "Underway" set at the dock and "Moored" set while sailing. Vessels reporting neither SOG nor navigation status pass through, as do AtoN and USCG SAR/CRS craft.
+    Only forward vessels that are underway (SOG ≥ 0.5 knots, or a non-parked navigation status when SOG is missing); parked hulls (at anchor, moored, aground) are dropped. At busy anchorages the marina clutter otherwise drowns the underway traffic picture. SOG outranks navigation status — crews leave "Underway" set at the dock and "Moored" set while sailing (the AIS "SOG not available" sentinel falls through to navigation status). Vessels reporting neither SOG nor navigation status pass through. Never dropped: AtoN, USCG SAR/CRS craft, SART/EPIRB/MOB distress beacons, and vessels listed in ``KNOWN_CRAFT``.
 
 Additional configuration parameters, including TLS & TAK Server configuration, are included in the [PyTAK Configuration](https://pytak.readthedocs.io/en/stable/configuration/) documentation.

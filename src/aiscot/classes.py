@@ -38,11 +38,18 @@ except ImportError:
     _gpsd = None
 
 
+# Static & Voyage data (Type 5/19/24) arrives in separate messages from
+# position reports on the NMEA path; cache it per MMSI so ship-class
+# styling and name prefixes work on RF feeds. Bounded FIFO.
+STATIC_CACHE_MAX = 4096
+_STATIC_KEYS = ("shipname", "shiptype", "callsign")
+
+
 # pylint: disable=too-many-instance-attributes
 class AISNetworkClient(asyncio.Protocol):
     """Network AIS feed client (receiver)."""
 
-    __slots__ = ('transport', 'address', 'known_craft_db', 'ready', 'queue', 'config', '_include_all_craft', '_debug')
+    __slots__ = ('transport', 'address', 'known_craft_db', 'ready', 'queue', 'config', '_include_all_craft', '_debug', '_static_cache')
 
     _logger = logging.getLogger(__name__)
     if not _logger.handlers:
@@ -59,6 +66,7 @@ class AISNetworkClient(asyncio.Protocol):
         self.transport = None
         self.address = None
         self.known_craft_db: Optional[dict] = None
+        self._static_cache: dict = {}
 
         self.ready = ready
         self.queue = queue
@@ -81,6 +89,23 @@ class AISNetworkClient(asyncio.Protocol):
             self._logger.debug("Decoded AIS: '%s'", msg)
 
         mmsi = str(msg.get("mmsi", ""))
+
+        # Position-less messages (Type 5/24 Static & Voyage data, partial
+        # multi-line sentences) produce no CoT — but their shipname/shiptype
+        # is what ship-class styling needs, so cache it per MMSI and fold it
+        # into this vessel's subsequent position reports.
+        if "lat" not in msg:
+            if mmsi:
+                static = {
+                    k: msg[k] for k in _STATIC_KEYS if msg.get(k) not in (None, "")
+                }
+                if static:
+                    self._static_cache.setdefault(mmsi, {}).update(static)
+                    while len(self._static_cache) > STATIC_CACHE_MAX:
+                        self._static_cache.pop(next(iter(self._static_cache)))
+            return
+        if mmsi in self._static_cache:
+            msg = {**self._static_cache[mmsi], **msg}
 
         known_craft: dict = {}
 

@@ -45,17 +45,14 @@ from aiscot.shipclass import (  # noqa: E402
     AIS_SHIPS_ICONSET_FILENAME,
     AIS_SHIPS_ICONSET_GROUP,
     AIS_SHIPS_ICONSET_UID,
-    SHIPCLASS_ATON,
+    DIAMOND_SHIPCLASSES,
     SHIPCLASS_HEX,
-    SHIPCLASS_SARTEPIRB,
-    SHIPCLASS_STATION,
     vessel_icon_name,
 )
 
 SIZE = 32          # ATAK usericon size
 SUPERSAMPLE = 4    # 4x4 coverage sampling per pixel
 OUTLINE_HEX = "#1A1A1A"
-DIAMOND_CLASSES = (SHIPCLASS_ATON, SHIPCLASS_STATION, SHIPCLASS_SARTEPIRB)
 
 # Design space is 20x20 (AIS-catcher sprite cell), centered shapes.
 ARROW = [(10.0, 1.5), (17.0, 17.5), (10.0, 14.0), (3.0, 17.5)]
@@ -149,7 +146,7 @@ def _png_bytes(w: int, h: int, rows: list) -> bytes:
 def build(out_path: Path) -> list:
     icons: dict = {}
     for shipclass, hex_color in SHIPCLASS_HEX.items():
-        if shipclass in DIAMOND_CLASSES:
+        if shipclass in DIAMOND_SHIPCLASSES:
             icons[vessel_icon_name(shipclass, False)] = render_icon("diamond", hex_color)
         else:
             icons[vessel_icon_name(shipclass, True)] = render_icon("arrow", hex_color)

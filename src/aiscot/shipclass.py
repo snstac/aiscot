@@ -67,6 +67,10 @@ SHIPCLASS_HEX = {
     SHIPCLASS_SARTEPIRB: "#FF0000",
 }
 
+# Classes drawn as a single motion-independent diamond icon (also used by
+# scripts/build_ais_iconset.py when generating the zip).
+DIAMOND_SHIPCLASSES = (SHIPCLASS_ATON, SHIPCLASS_STATION, SHIPCLASS_SARTEPIRB)
+
 # Stable uid for the generated ATAK iconset (scripts/build_ais_iconset.py);
 # CoT ``iconsetpath`` values referencing the set must never drift from it.
 AIS_SHIPS_ICONSET_UID = "3c73f1d2-9a41-4c26-8b6f-51e072d84c1b"
@@ -101,9 +105,14 @@ VESSEL_NAME_PREFIXED_RE = re.compile(
 # 6 Aground.
 PARKED_NAV_STATUS_CODES = {"1", "5", "6"}
 
-# SOG floor for "underway", in the same m/s units ``ais_to_cot`` reports
-# (0.5 knots).
-UNDERWAY_MIN_SOG_MS = 0.5 * 0.514444
+KNOTS_TO_MS = 0.514444
+
+# SOG floor for "underway", in m/s (0.5 knots).
+UNDERWAY_MIN_SOG_MS = 0.5 * KNOTS_TO_MS
+
+# AIS "SOG not available" sentinel, in knots: raw field 1023 (= 102.3 with
+# the 0.1-knot scale); 102.2 and below are real speeds.
+SOG_NOT_AVAILABLE_KNOTS = 102.3
 
 # Keys AIS feeds use for ship type. Deliberately excludes lowercase "type",
 # which is the AIS *message* type in NMEA-decoded (pyAISm) data.
@@ -119,7 +128,14 @@ _SHIPTYPE_KEYS = (
 
 _NAV_STATUS_KEYS = ("status", "nav_status", "NAVSTAT", "navStatus")
 
-_SOG_KEYS = ("speed", "SPEED", "SOG")
+# SOG keys with the per-feed scale that converts their value to knots:
+# pyAISm passes the raw AIS field through (0.1-knot units), while the
+# AISHub (format=1) and SeaVision APIs report plain knots.
+_SOG_KEY_KNOTS_SCALE = (
+    ("speed", 0.1),  # pyAISm raw AIS units
+    ("SPEED", 1.0),  # AISHub / SeaVision
+    ("SOG", 1.0),  # AISHub format=1 / SeaVision
+)
 
 
 def get_shiptype(craft: dict) -> str:
@@ -148,16 +164,21 @@ def get_nav_status(craft: dict) -> str:
 
 
 def get_sog_ms(craft: dict) -> Optional[float]:
-    """Speed over ground in m/s, using the same 0.1-knot AIS resolution
-    conversion as ``ais_to_cot`` (0.1 / 1.944 = 0.05144)."""
-    for key in _SOG_KEYS:
+    """Speed over ground in m/s, scaling each feed's key to knots first
+    (pyAISm ``speed`` is raw 0.1-knot units; API ``SPEED``/``SOG`` are
+    knots). Returns None when SOG is missing or carries the AIS "not
+    available" sentinel (raw 1023 / 102.3 knots)."""
+    for key, scale in _SOG_KEY_KNOTS_SCALE:
         value = craft.get(key)
         if value in (None, ""):
             continue
         try:
-            return float(value) * 0.05144
+            knots = float(value) * scale
         except (TypeError, ValueError):
             continue
+        if knots >= SOG_NOT_AVAILABLE_KNOTS:
+            return None
+        return knots * KNOTS_TO_MS
     return None
 
 
@@ -226,16 +247,24 @@ def shipclass_hex(shipclass: str) -> str:
     return SHIPCLASS_HEX.get(shipclass, SHIPCLASS_HEX[SHIPCLASS_UNKNOWN])
 
 
+def _hex_to_signed_argb(hex_color: str) -> int:
+    val = 0xFF000000 | int(hex_color.lstrip("#"), 16)
+    return val - 0x100000000 if val >= 0x80000000 else val
+
+
+# Precomputed opaque signed-int colors (hot path: one lookup per message).
+SHIPCLASS_ARGB = {sc: _hex_to_signed_argb(hx) for sc, hx in SHIPCLASS_HEX.items()}
+
+
 def shipclass_argb(shipclass: str) -> int:
     """Opaque marker color as the signed 32-bit int CoT ``<color argb>``
     takes."""
-    val = 0xFF000000 | int(shipclass_hex(shipclass).lstrip("#"), 16)
-    return val - 0x100000000 if val >= 0x80000000 else val
+    return SHIPCLASS_ARGB.get(shipclass, SHIPCLASS_ARGB[SHIPCLASS_UNKNOWN])
 
 
 def vessel_icon_name(shipclass: str, underway: bool) -> str:
     """PNG name inside the generated iconset for a class/motion state."""
-    if shipclass in (SHIPCLASS_ATON, SHIPCLASS_STATION, SHIPCLASS_SARTEPIRB):
+    if shipclass in DIAMOND_SHIPCLASSES:
         return f"{shipclass}.png"
     return f"{shipclass}_{'underway' if underway else 'stopped'}.png"
 

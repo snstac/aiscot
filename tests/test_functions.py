@@ -135,7 +135,7 @@ def test_ais_to_cot(sample_data_pyAISm):
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
-    assert track[0].attrib["speed"] == "3.292181069958848"
+    assert track[0].attrib["speed"] == "3.2924416"
 
 
 def test_ais_to_cot_with_known_craft(sample_data_pyAISm, sample_known_craft):
@@ -175,7 +175,7 @@ def test_ais_to_cot_with_known_craft(sample_data_pyAISm, sample_known_craft):
 
     track = detail[0].findall("track")
     assert track[0].attrib["course"] == "95"
-    assert track[0].attrib["speed"] == "3.29216"
+    assert track[0].attrib["speed"] == "3.2924416"
 
 
 def test_ais_to_cot_none():
@@ -338,3 +338,49 @@ def test_ais_to_cot_underway_only(sample_data_pyAISm):
 def test_ais_to_cot_underway_only_keeps_aton(sample_aton):
     """AtoN are never underway; UNDERWAY_ONLY must not drop them."""
     assert aiscot.ais_to_cot(sample_aton, {"UNDERWAY_ONLY": True}) is not None
+
+
+def test_ais_to_cot_underway_only_keeps_distress_beacons(sample_data_pyAISm):
+    """A drifting AIS-SART/MOB/EPIRB (97x MMSI, SOG ~0) must never be
+    dropped by UNDERWAY_ONLY."""
+    for mmsi in (970123456, 972123456, 974123456):
+        beacon = dict(sample_data_pyAISm)
+        beacon["mmsi"] = mmsi
+        beacon["speed"] = 0
+        assert aiscot.ais_to_cot(beacon, {"UNDERWAY_ONLY": True}) is not None
+
+
+def test_ais_to_cot_underway_only_keeps_known_craft(sample_data_pyAISm):
+    """Operator watch-listed KNOWN_CRAFT are exempt from UNDERWAY_ONLY."""
+    parked = dict(sample_data_pyAISm)
+    parked["speed"] = 0
+    known_craft = {"MMSI": str(parked["mmsi"]), "NAME": "TACO_01"}
+    assert (
+        aiscot.ais_to_cot(parked, {"UNDERWAY_ONLY": True}, known_craft=known_craft)
+        is not None
+    )
+
+
+def test_ais_to_cot_underway_only_sog_not_available(sample_data_pyAISm):
+    """Raw SOG 1023 = "not available": fall through to nav status."""
+    moored = dict(sample_data_pyAISm)
+    moored["speed"] = 1023
+    moored["status"] = 5
+    assert aiscot.ais_to_cot(moored, {"UNDERWAY_ONLY": True}) is None
+
+
+def test_ais_to_cot_known_craft_name_not_prefixed(sample_data_pyAISm):
+    """VESSEL_NAME_PREFIX must not rewrite operator-curated KNOWN_CRAFT
+    names."""
+    craft = dict(sample_data_pyAISm)
+    craft["shiptype"] = 52
+    known_craft = {"MMSI": str(craft["mmsi"]), "NAME": "TACO_01"}
+    cot = aiscot.ais_to_cot(craft, known_craft=known_craft)
+    contact = cot.findall("detail")[0].findall("contact")
+    assert contact[0].attrib["callsign"] == "TACO_01"
+
+
+def test_ais_to_cot_ignore_aton_false_string(sample_aton):
+    """IGNORE_ATON=False (string, as configs deliver it) keeps AtoN."""
+    assert aiscot.ais_to_cot(sample_aton, {"IGNORE_ATON": "False"}) is not None
+    assert aiscot.ais_to_cot(sample_aton, {"IGNORE_ATON": "True"}) is None

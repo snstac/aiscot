@@ -89,6 +89,20 @@ def test_get_shiptype():
     assert shipclass.get_shiptype({}) == ""
 
 
+def test_get_sog_ms():
+    # pyAISm "speed" is raw 0.1-knot AIS units:
+    assert shipclass.get_sog_ms({"speed": 64}) == pytest.approx(6.4 * 0.514444)
+    # API feeds (AISHub format=1, SeaVision) report knots:
+    assert shipclass.get_sog_ms({"SOG": 6.4}) == pytest.approx(6.4 * 0.514444)
+    assert shipclass.get_sog_ms({"SPEED": 6.4}) == pytest.approx(6.4 * 0.514444)
+    # AIS "SOG not available" sentinel: raw 1023 / 102.3 knots → None;
+    # 102.2 knots is a real (max-scale) speed.
+    assert shipclass.get_sog_ms({"speed": 1023}) is None
+    assert shipclass.get_sog_ms({"SOG": 102.3}) is None
+    assert shipclass.get_sog_ms({"speed": 1022}) == pytest.approx(102.2 * 0.514444)
+    assert shipclass.get_sog_ms({}) is None
+
+
 def test_get_underway():
     # SOG present: SOG decides (0.1-knot AIS units; floor is 0.5 knots).
     assert shipclass.get_underway({"speed": 64}) is True
@@ -96,6 +110,11 @@ def test_get_underway():
     assert shipclass.get_underway({"speed": 0, "status": 0}) is False
     # Crews leave "Moored" set while sailing — SOG outranks nav status:
     assert shipclass.get_underway({"speed": 64, "status": 5}) is True
+    # API feeds report knots: 4 kts is underway (not 0.4 kts).
+    assert shipclass.get_underway({"SOG": 4}) is True
+    # SOG "not available" sentinel falls through to nav status.
+    assert shipclass.get_underway({"speed": 1023, "status": 5}) is False
+    assert shipclass.get_underway({"speed": 1023}) is None
     # No SOG: parked nav statuses (1 AtAnchor, 5 Moored, 6 Aground) decide.
     assert shipclass.get_underway({"status": 5}) is False
     assert shipclass.get_underway({"NAVSTAT": 1}) is False

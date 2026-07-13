@@ -13,10 +13,22 @@
   - New `scripts/build_ais_iconset.py` regenerates the iconset (pure stdlib).
 - `VESSEL_NAME_PREFIX` (default `True`): conventional ship-type callsign
   prefixes — `T/B Delores`, `P/V Golden Gate`, `M/V`, `M/T`, `F/V`, `S/V`, `SAR`,
-  `A/P`, `L/E`. Already-prefixed and bare-MMSI callsigns pass verbatim.
+  `A/P`, `L/E`. Already-prefixed, bare-MMSI, and operator-curated `KNOWN_CRAFT`
+  callsigns pass verbatim.
 - `UNDERWAY_ONLY` (default `False`): drop parked hulls (SOG < 0.5 kts, or
-  anchored/moored/aground when SOG is missing). SOG outranks nav status; AtoN
-  and USCG SAR/CRS are exempt.
+  anchored/moored/aground when SOG is missing). SOG outranks nav status; AtoN,
+  USCG SAR/CRS, SART/EPIRB/MOB distress beacons, and `KNOWN_CRAFT` vessels are
+  exempt.
+- The NMEA receiver now caches Type 5/24 Static & Voyage data (shipname,
+  shiptype) per MMSI and folds it into that vessel's position reports, so
+  ship-class styling and name prefixes work on RF feeds — not just API feeds
+  that join static data server-side.
+- SOG handling: per-feed units (pyAISm raw 0.1-knot vs. AISHub/SeaVision
+  knots) and the AIS "SOG not available" sentinel (1023 / 102.3 kts) are now
+  respected in both the CoT `<track speed>` and the underway logic. Track
+  speeds from API feeds were previously 10x too low.
+- `IGNORE_ATON` now parses booleans properly (`IGNORE_ATON=False` previously
+  behaved like `True`).
 
 ## AISCoT 7.2.1
 

@@ -253,8 +253,8 @@ def test_ais_to_cot_crs(sample_data_pyAISm):
     assert cot.attrib["type"] == "a-f-G-I-U-T"
 
 
-def test_ais_to_cot(sample_data_pyAISm):
-    """Test converting AIS to CoT."""
+def test_cot_to_xml(sample_data_pyAISm):
+    """Test rendering AIS as CoT XML bytes."""
     cot: bytes = aiscot.cot_to_xml(sample_data_pyAISm)
     assert b"a-f-S-X-M" in cot
     assert b"MMSI-366892000" in cot

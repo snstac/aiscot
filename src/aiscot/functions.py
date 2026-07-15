@@ -181,6 +181,9 @@ def ais_to_cot(
         or craft.get("veselType")
     ):
         vessel_type = str(temp)
+    if not vessel_type:
+        # Feeds that only carry ship_type/SHIPTYPE/cargo still get a Type.
+        vessel_type = shiptype
 
     if ais_name:
         remarks_fields.append(f"AIS Name: {ais_name}")

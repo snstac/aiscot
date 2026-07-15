@@ -204,11 +204,14 @@ def classify_vessel(mmsi: Optional[str], shiptype: Optional[str]) -> str:
     _mmsi = str(mmsi or "").strip()
     if _mmsi.isdigit():
         num = int(_mmsi)
-        if 970000000 <= num <= 980000000:
+        # SART (970), MOB (972) & EPIRB (974) blocks only — 975+ is
+        # unassigned and 98xxxxxxx is craft-associated-with-parent-ship.
+        if 970000000 <= num < 975000000:
             return SHIPCLASS_SARTEPIRB
         if 990000000 <= num <= 999999999:
             return SHIPCLASS_ATON
-        if 0 < num < 9000000:
+        # Coast stations are the full 00MIDxxxx block.
+        if 0 < num < 10000000:
             return SHIPCLASS_STATION
     code = str(shiptype or "").strip()
     if not code.isdigit():

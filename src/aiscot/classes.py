@@ -45,11 +45,51 @@ STATIC_CACHE_MAX = 4096
 _STATIC_KEYS = ("shipname", "shiptype", "callsign")
 
 
+class _NoStatus:
+    """Stand-in for pytak.StatusWriter on a pytak too old to have one.
+
+    AryaOS boxes are updated as packages, so this gateway can land on a host
+    whose pytak predates StatusWriter (added in 7.4.0) -- the fleet is on
+    7.3.13 today. Failing to import would take the gateway down over its
+    telemetry helper, which is exactly backwards: moving CoT is the job,
+    reporting on it is not.
+
+    Degrading here is safe because it is VISIBLE. With nothing writing
+    /run/aiscot/status.json, the Cockpit plugin reports "no status from this
+    gateway ... may be running a pytak too old to report status" rather than
+    rendering an empty feed as though the water were empty.
+    """
+
+    def count(self, *args, **kwargs) -> None:
+        return None
+
+    def record(self, *args, **kwargs) -> None:
+        return None
+
+    def set(self, *args, **kwargs) -> None:
+        return None
+
+    def write(self, *args, **kwargs) -> bool:
+        return False
+
+
+# Resolved at import so a missing StatusWriter is a startup-time decision
+# rather than an AttributeError on the first sentence off the wire.
+_StatusWriter = getattr(pytak, "StatusWriter", None)
+
+
+def make_status(app_name: str, version: str):
+    """Return a status writer, or a no-op if this pytak has none."""
+    if _StatusWriter is None:
+        return _NoStatus()
+    return _StatusWriter(app_name, version=version)
+
+
 # pylint: disable=too-many-instance-attributes
 class AISNetworkClient(asyncio.Protocol):
     """Network AIS feed client (receiver)."""
 
-    __slots__ = ('transport', 'address', 'known_craft_db', 'ready', 'queue', 'config', '_include_all_craft', '_debug', '_static_cache')
+    __slots__ = ('transport', 'address', 'known_craft_db', 'ready', 'queue', 'config', '_include_all_craft', '_debug', '_static_cache', 'status')
 
     _logger = logging.getLogger(__name__)
     if not _logger.handlers:
@@ -61,7 +101,7 @@ class AISNetworkClient(asyncio.Protocol):
         _logger.propagate = False
     logging.getLogger("asyncio").setLevel(pytak.LOG_LEVEL)
 
-    def __init__(self, ready, queue, config) -> None:
+    def __init__(self, ready, queue, config, status=None) -> None:
         """Initialize this class."""
         self.transport = None
         self.address = None
@@ -71,6 +111,12 @@ class AISNetworkClient(asyncio.Protocol):
         self.ready = ready
         self.queue = queue
         self.config = config
+
+        # Shares the owning AISWorker's status writer, because on an RF/NMEA
+        # deployment this class is where all the traffic actually lands -- the
+        # worker only sets up the socket. Optional so the protocol stays
+        # constructible on its own.
+        self.status = status if status is not None else _NoStatus()
 
         # Cache config values to avoid repeated parsing
         self._debug = self.config.getboolean("DEBUG", False)
@@ -82,11 +128,26 @@ class AISNetworkClient(asyncio.Protocol):
 
     def handle_message(self, data: bytes) -> None:
         """Handle incoming AIS data from network."""
-        d_data = data.decode().strip()
-        msg: dict = aiscot.pyAISm.decod_ais(d_data)
+        try:
+            d_data = data.decode().strip()
+            msg: dict = aiscot.pyAISm.decod_ais(d_data)
+        except Exception as exc:  # noqa: BLE001 -- see below
+            # decod_ais raises on a bad checksum or a non-AIVDM line, and RF
+            # AIS produces broken sentences constantly. Previously this
+            # propagated out of datagram_received() into asyncio's exception
+            # handler, which logged a traceback per corrupt burst. Counted
+            # instead of raised -- but deliberately NOT counted as `rx`, so a
+            # mis-wired feed of pure garbage cannot look like healthy traffic.
+            self._logger.debug("Undecodable AIS sentence (%s bytes): %s", len(data), exc)
+            return
+
+        if not msg:
+            return
 
         if self._debug:
             self._logger.debug("Decoded AIS: '%s'", msg)
+
+        self.status.count("rx")
 
         mmsi = str(msg.get("mmsi", ""))
 
@@ -95,6 +156,9 @@ class AISNetworkClient(asyncio.Protocol):
         # is what ship-class styling needs, so cache it per MMSI and fold it
         # into this vessel's subsequent position reports.
         if "lat" not in msg:
+            # The COMMON case on RF, not an error: Type 5 static data is how a
+            # vessel gets its name, and multi-line sentences arrive in halves.
+            self.status.count("no_position")
             if mmsi:
                 static = {
                     k: msg[k] for k in _STATIC_KEYS if msg.get(k) not in (None, "")
@@ -103,6 +167,18 @@ class AISNetworkClient(asyncio.Protocol):
                     self._static_cache.setdefault(mmsi, {}).update(static)
                     while len(self._static_cache) > STATIC_CACHE_MAX:
                         self._static_cache.pop(next(iter(self._static_cache)))
+                    # Shown in the feed even though it plots nothing: hearing a
+                    # vessel name is proof the receiver is working, and on a
+                    # quiet stretch of water it may be the only traffic there
+                    # is. An empty panel would read as a dead antenna.
+                    self.status.record(
+                        mmsi=mmsi,
+                        shipname=static.get("shipname"),
+                        type=static.get("shiptype"),
+                        placed=False,
+                    )
+                    self.status.set(tracked=len(self._static_cache))
+            self.status.write()
             return
         if mmsi in self._static_cache:
             msg = {**self._static_cache[mmsi], **msg}
@@ -114,14 +190,37 @@ class AISNetworkClient(asyncio.Protocol):
 
         # Skip if we're using known_craft CSV and this Craft isn't found:
         if self.known_craft_db and not known_craft and not self._include_all_craft:
+            # "Why do I only see four ships" must be answerable from the UI,
+            # and "because you configured a KNOWN_CRAFT filter" is the answer
+            # often enough to be worth a counter.
+            self.status.count("filtered_unknown")
+            self.status.write()
             return
 
         event: Optional[bytes] = aiscot.cot_to_xml(
             msg, config=self.config, known_craft=known_craft
         )
 
+        self.status.record(
+            mmsi=mmsi,
+            shipname=msg.get("shipname"),
+            type=msg.get("shiptype"),
+            speed=msg.get("speed"),
+            placed=event is not None,
+        )
+        self.status.set(tracked=len(self._static_cache))
+
         if event:
+            self.status.count("emitted")
             self.queue.put_nowait(event)
+        else:
+            # A positioned vessel that produced no CoT: UNDERWAY_ONLY dropped
+            # a moored vessel, IGNORE_ATON dropped a navigation aid, or the
+            # position failed validation. Distinct from `filtered_unknown`
+            # because the fix is a different config knob.
+            self.status.count("no_cot")
+
+        self.status.write()
 
     def connection_made(self, transport) -> None:
         """Call when a network connection is made."""
@@ -160,7 +259,7 @@ class AISNetworkClient(asyncio.Protocol):
 class AISWorker(pytak.QueueWorker):
     """AIS to TAK worker."""
 
-    __slots__ = ('known_craft_db', 'session', 'feed_url', '_include_all_craft', '_poll_interval', '_host', '_port')
+    __slots__ = ('known_craft_db', 'session', 'feed_url', '_include_all_craft', '_poll_interval', '_host', '_port', 'status')
 
     def __init__(self, queue: asyncio.Queue, config: ConfigParser) -> None:
         """Initialize an instance of this class."""
@@ -169,7 +268,11 @@ class AISWorker(pytak.QueueWorker):
         self.known_craft_db: dict = {}
         self.session: Optional[aiohttp.ClientSession] = None
         self.feed_url: Optional[str] = None
-        
+
+        # Runtime status for Cockpit. systemd gives us /run/aiscot via
+        # RuntimeDirectory=, so this lands where the plugin looks for it.
+        self.status = make_status("aiscot", aiscot.__version__)
+
         # Cache config values to avoid repeated parsing
         self._include_all_craft = self.config.getboolean("INCLUDE_ALL_CRAFT", False)
         self._poll_interval = int(self.config.get("POLL_INTERVAL", aiscot.DEFAULT_POLL_INTERVAL))
@@ -182,6 +285,11 @@ class AISWorker(pytak.QueueWorker):
         if len(data) == 0:
             return
 
+        # How many vessels this feed currently reports. A level, not a total:
+        # "31 ships right now" is the number an operator sanity-checks a feed
+        # against, and a lifetime `rx` count cannot answer it.
+        self.status.set(tracked=len(data))
+
         for msg in data:
             await self._process_message(msg)
 
@@ -190,8 +298,12 @@ class AISWorker(pytak.QueueWorker):
         # Use .get() with chained fallback for MMSI
         mmsi = msg.get("MMSI") or msg.get("mmsi")
         if not mmsi:
+            # No MMSI is not a vessel report. Deliberately not counted as
+            # received, so a malformed feed cannot look like healthy traffic.
             return
         mmsi = str(mmsi)
+
+        self.status.count("rx")
 
         known_craft: dict = {}
 
@@ -202,14 +314,31 @@ class AISWorker(pytak.QueueWorker):
 
         # Skip if we're using known_craft CSV and this Craft isn't found:
         if self.known_craft_db and not known_craft and not self._include_all_craft:
+            self.status.count("filtered_unknown")
+            self.status.write()
             return
 
         event: Optional[bytes] = aiscot.cot_to_xml(
             msg, self.config, known_craft=known_craft
         )
 
+        self.status.record(
+            mmsi=mmsi,
+            shipname=msg.get("shipname") or msg.get("NAME"),
+            type=msg.get("shiptype") or msg.get("TYPE"),
+            speed=msg.get("speed") or msg.get("SOG"),
+            placed=event is not None,
+        )
+
         if event:
+            self.status.count("emitted")
             await self.put_queue(event)
+        else:
+            # UNDERWAY_ONLY / IGNORE_ATON / unusable position -- see the same
+            # branch in AISNetworkClient.handle_message().
+            self.status.count("no_cot")
+
+        self.status.write()
 
     async def _get_feed(self) -> None:
         """Get AIS data from AIS URL feed."""
@@ -281,13 +410,42 @@ class AISWorker(pytak.QueueWorker):
         """Run this Thread, reads AIS & outputs CoT."""
         self._logger.info("Running %s", self.__class__.__name__)
         await self._load_known_craft()
-        await self._initialize_feed()
+
+        # Write once, before any vessel arrives. Without this the management
+        # UI shows "no status from this gateway" until the first contact --
+        # indistinguishable from a gateway that failed to start. AIS over RF
+        # can be silent for many minutes on an inland or quiet-water site,
+        # which is exactly when someone goes looking at the panel.
+        self.status.write(force=True)
+
+        heartbeat = asyncio.ensure_future(self._status_heartbeat())
+        try:
+            await self._initialize_feed()
+        finally:
+            heartbeat.cancel()
+
+    async def _status_heartbeat(self, interval: float = 5.0) -> None:
+        """Keep the status file fresh while no vessels are being heard.
+
+        Quiet water and a wedged gateway both produce zero CoT. The UI tells
+        them apart by whether this file keeps changing, so an idle-but-healthy
+        gateway MUST keep writing.
+
+        A separate task rather than a timer inside the feed loop: the RF path
+        parks on a datagram socket with no period at all, and the API path's
+        period is the operator's POLL_INTERVAL (often 30s+). Neither can
+        provide a 5s heartbeat, and neither should be slowed down to try.
+        """
+        while True:
+            await asyncio.sleep(interval)
+            self.status.write(force=True)
 
     async def _initialize_feed(self) -> None:
         """Initialize the feed URL and start polling or network receiver."""
         self.feed_url = self.config.get("FEED_URL")
         self._logger.info("Using FEED_URL: %s", self.feed_url)
         if self.feed_url:
+            self.status.set(feed=str(self.feed_url))
             await self._poll_feed()
         else:
             await self._network_rx()
@@ -299,11 +457,21 @@ class AISWorker(pytak.QueueWorker):
 
         self._logger.info("Listening for AIS on %s:%s", self._host, self._port)
 
+        self.status.set(listen=f"udp://{self._host}:{self._port}")
+
         await loop.create_datagram_endpoint(
-            lambda: AISNetworkClient(ready, self.queue, self.config),
+            lambda: AISNetworkClient(ready, self.queue, self.config, self.status),
             local_addr=(self._host, self._port),
         )
         await ready.wait()
+
+        # Re-write now that the socket is actually bound. run()'s startup
+        # write happens before this point and so cannot name the listener;
+        # without this the panel says "listening on: unknown" until the first
+        # heartbeat, and "where is it listening" is the first question asked
+        # when a feed shows nothing.
+        self.status.write(force=True)
+
         # Keep the coroutine alive without spinning the CPU
         while True:
             await asyncio.sleep(3600)  # Sleep for 1 hour, will wake on events

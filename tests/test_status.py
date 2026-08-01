@@ -107,6 +107,29 @@ def _writer(tmp_path):
     return pytak.StatusWriter("aiscot-test", path=str(tmp_path / "status.json"))
 
 
+def _in_loop(fn):
+    """Run `fn()` inside a fresh event loop and return its result.
+
+    Everything that constructs an asyncio.Queue or asyncio.Event goes through
+    here. Those bind to the current event loop on Python < 3.10, and
+    asyncio.run() leaves no current loop behind when it returns -- so building
+    them at test-body level works on 3.13 and then fails in CI on 3.9 with
+    "There is no current event loop", in whichever test happens to run after
+    the first asyncio.run(). Building inside the loop is portable across
+    3.9-3.13 and not order-dependent.
+
+    `fn` may return a coroutine, which is awaited.
+    """
+
+    async def _main():
+        result = fn()
+        if asyncio.iscoroutine(result):
+            return await result
+        return result
+
+    return asyncio.run(_main())
+
+
 def _doc(status):
     with open(status.path, encoding="utf-8") as handle:
         return json.load(handle)
@@ -116,16 +139,27 @@ def _doc(status):
 class TestNetworkStatusSurface:
     """The RF/NMEA path -- where every AryaOS box's AIS traffic lands."""
 
-    def _client(self, tmp_path, **overrides):
-        client = AISNetworkClient(
-            asyncio.Event(), asyncio.Queue(), _config(**overrides), _writer(tmp_path)
-        )
-        return client
+    def _client(self, tmp_path, action=None, **overrides):
+        """Build a client and run `action(client)` inside one event loop."""
+        built = {}
+
+        def _make():
+            client = AISNetworkClient(
+                asyncio.Event(),
+                asyncio.Queue(),
+                _config(**overrides),
+                _writer(tmp_path),
+            )
+            built["client"] = client
+            if action is not None:
+                action(client)
+
+        _in_loop(_make)
+        return built["client"]
 
     def test_position_report_is_marked_placed(self, tmp_path, monkeypatch):
-        client = self._client(tmp_path)
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: dict(MSG_POSITION))
-        client.handle_message(b"!AIVDM,mock-position")
+        client = self._client(tmp_path, lambda c: c.handle_message(b"!AIVDM,mock"))
 
         doc = _doc(client.status)
         assert doc["counters"]["rx"] == 1
@@ -144,9 +178,8 @@ class TestNetworkStatusSurface:
         panel -- which an operator reads as a fault and starts swapping
         antennas over.
         """
-        client = self._client(tmp_path)
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: dict(MSG_STATIC))
-        client.handle_message(b"!AIVDM,mock-static")
+        client = self._client(tmp_path, lambda c: c.handle_message(b"!AIVDM,mock"))
 
         doc = _doc(client.status)
         assert doc["counters"]["rx"] == 1
@@ -162,9 +195,8 @@ class TestNetworkStatusSurface:
         self, tmp_path, monkeypatch
     ):
         """Half of a multi-line sentence: heard, but not yet a vessel."""
-        client = self._client(tmp_path)
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: dict(MSG_PARTIAL))
-        client.handle_message(b"!AIVDM,mock-partial")
+        client = self._client(tmp_path, lambda c: c.handle_message(b"!AIVDM,mock"))
 
         doc = _doc(client.status)
         assert doc["counters"]["rx"] == 1
@@ -179,22 +211,30 @@ class TestNetworkStatusSurface:
         not be an error path -- but it must not inflate `rx` either, or a
         mis-wired feed of pure garbage would read as healthy traffic.
         """
-        client = self._client(tmp_path)
-        client.handle_message(b"$GPGGA,not-an-ais-sentence")
+        client = self._client(
+            tmp_path, lambda c: c.handle_message(b"$GPGGA,not-an-ais-sentence")
+        )
         assert not os.path.exists(client.status.path)
 
     def test_bad_checksum_is_not_counted_as_received(self, tmp_path):
         """Same, for the far more common failure: a corrupted payload."""
-        client = self._client(tmp_path)
-        client.handle_message(b"!AIVDM,1,1,,B,177KQJ5000G?tO`K>RA1wUbN0TKH,0*00")
+        client = self._client(
+            tmp_path,
+            lambda c: c.handle_message(
+                b"!AIVDM,1,1,,B,177KQJ5000G?tO`K>RA1wUbN0TKH,0*00"
+            ),
+        )
         assert not os.path.exists(client.status.path)
 
     def test_known_craft_filter_is_visible_as_a_filter(self, tmp_path, monkeypatch):
         """"Why do I only see four ships" must be answerable from the UI."""
-        client = self._client(tmp_path, INCLUDE_ALL_CRAFT="false")
-        client.known_craft_db = {"999999999": {"MMSI": "999999999"}}
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: dict(MSG_POSITION))
-        client.handle_message(b"!AIVDM,mock-position")
+
+        def _filtered(client):
+            client.known_craft_db = {"999999999": {"MMSI": "999999999"}}
+            client.handle_message(b"!AIVDM,mock-position")
+
+        client = self._client(tmp_path, _filtered, INCLUDE_ALL_CRAFT="false")
 
         doc = _doc(client.status)
         assert doc["counters"]["rx"] == 1
@@ -209,9 +249,10 @@ class TestNetworkStatusSurface:
         Counted separately from `no_position` because the fix is a different
         knob: UNDERWAY_ONLY, not the antenna.
         """
-        client = self._client(tmp_path, UNDERWAY_ONLY="true")
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: dict(MSG_MOORED))
-        client.handle_message(b"!AIVDM,mock-moored")
+        client = self._client(
+            tmp_path, lambda c: c.handle_message(b"!AIVDM,mock"), UNDERWAY_ONLY="true"
+        )
 
         doc = _doc(client.status)
         assert doc["counters"]["rx"] == 1
@@ -224,12 +265,14 @@ class TestNetworkStatusSurface:
         self, tmp_path, monkeypatch
     ):
         """Static-then-position: the feed row for the plot carries the name."""
-        client = self._client(tmp_path)
         msgs = iter([dict(MSG_STATIC), dict(MSG_POSITION)])
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: next(msgs))
 
-        client.handle_message(b"!AIVDM,mock-static")
-        client.handle_message(b"!AIVDM,mock-position")
+        def _both(client):
+            client.handle_message(b"!AIVDM,mock-static")
+            client.handle_message(b"!AIVDM,mock-position")
+
+        client = self._client(tmp_path, _both)
 
         # Writes are rate-limited to once a second, so two sentences in the
         # same second leave the file holding the first one's figures. That is
@@ -248,14 +291,24 @@ class TestNetworkStatusSurface:
 class TestFeedStatusSurface:
     """The HTTP feed path: AISHub / SeaVision."""
 
-    def _worker(self, tmp_path, **overrides):
-        worker = AISWorker(asyncio.Queue(), _config(**overrides))
-        worker.status = _writer(tmp_path)
-        return worker
+    def _worker(self, tmp_path, action=None, **overrides):
+        """Build a worker and run `action(worker)` inside one event loop."""
+        built = {}
+
+        async def _make():
+            worker = AISWorker(asyncio.Queue(), _config(**overrides))
+            worker.status = _writer(tmp_path)
+            built["worker"] = worker
+            if action is not None:
+                await action(worker)
+
+        _in_loop(_make)
+        return built["worker"]
 
     def test_feed_vessel_is_recorded_and_emitted(self, tmp_path):
-        worker = self._worker(tmp_path)
-        asyncio.run(worker._process_message(dict(MSG_POSITION)))
+        worker = self._worker(
+            tmp_path, lambda w: w._process_message(dict(MSG_POSITION))
+        )
 
         doc = _doc(worker.status)
         assert doc["counters"]["rx"] == 1
@@ -265,15 +318,17 @@ class TestFeedStatusSurface:
 
     def test_record_without_mmsi_is_not_counted_as_received(self, tmp_path):
         """No MMSI is not a vessel report."""
-        worker = self._worker(tmp_path)
-        asyncio.run(worker._process_message({"lat": 37.8, "lon": -122.5}))
+        worker = self._worker(
+            tmp_path, lambda w: w._process_message({"lat": 37.8, "lon": -122.5})
+        )
         assert not os.path.exists(worker.status.path)
 
     def test_tracked_reports_vessels_in_the_current_feed(self, tmp_path):
-        worker = self._worker(tmp_path)
         second = dict(MSG_POSITION)
         second["mmsi"] = 366999000
-        asyncio.run(worker.handle_data([dict(MSG_POSITION), second]))
+        worker = self._worker(
+            tmp_path, lambda w: w.handle_data([dict(MSG_POSITION), second])
+        )
 
         worker.status.write(force=True)  # stands in for the 5s heartbeat
         doc = _doc(worker.status)
@@ -287,7 +342,7 @@ class TestFeedStatusSurface:
         Get the app name wrong and the gateway writes a status file nobody is
         watching, which presents identically to writing none at all.
         """
-        worker = AISWorker(asyncio.Queue(), _config())
+        worker = _in_loop(lambda: AISWorker(asyncio.Queue(), _config()))
         assert worker.status.app_name == "aiscot"
         assert worker.status.version == aiscot.__version__
         assert worker.status.path.endswith(os.path.join("aiscot", "status.json"))
@@ -318,26 +373,36 @@ class TestStatusDegradesVisibly:
         third-party caller of AISNetworkClient() gets.
         """
         monkeypatch.setattr(aiscot.classes, "_StatusWriter", None)
-        client = AISNetworkClient(asyncio.Event(), asyncio.Queue(), _config())
-        assert isinstance(client.status, aiscot.classes._NoStatus)
-
         monkeypatch.setattr(aiscot.pyAISm, "decod_ais", lambda _: dict(MSG_POSITION))
-        client.handle_message(b"!AIVDM,mock-position")
+
+        def _make():
+            client = AISNetworkClient(asyncio.Event(), asyncio.Queue(), _config())
+            client.handle_message(b"!AIVDM,mock-position")
+            return client
+
+        client = _in_loop(_make)
+        assert isinstance(client.status, aiscot.classes._NoStatus)
         assert not client.queue.empty()
 
     @needs_cot_event
     def test_worker_still_emits_cot_without_a_status_writer(self, monkeypatch):
         monkeypatch.setattr(aiscot.classes, "_StatusWriter", None)
-        worker = AISWorker(asyncio.Queue(), _config())
-        assert isinstance(worker.status, aiscot.classes._NoStatus)
 
         sent = []
+        seen = {}
 
-        async def _capture(event):
-            sent.append(event)
+        async def _main():
+            worker = AISWorker(asyncio.Queue(), _config())
+            seen["status"] = worker.status
 
-        worker.put_queue = _capture
-        asyncio.run(worker._process_message(dict(MSG_POSITION)))
+            async def _capture(event):
+                sent.append(event)
+
+            worker.put_queue = _capture
+            await worker._process_message(dict(MSG_POSITION))
+
+        _in_loop(_main)
+        assert isinstance(seen["status"], aiscot.classes._NoStatus)
         assert len(sent) == 1
 
     def test_real_writer_used_when_available(self):

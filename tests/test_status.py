@@ -347,6 +347,40 @@ class TestFeedStatusSurface:
         assert worker.status.version == aiscot.__version__
         assert worker.status.path.endswith(os.path.join("aiscot", "status.json"))
 
+    def test_close_releases_udp_listener_for_in_process_reconnect(self):
+        """A replacement worker can immediately bind the same local UDP port."""
+
+        async def _wait_until_bound(worker):
+            for _ in range(100):
+                if worker._transport is not None:
+                    return
+                await asyncio.sleep(0.01)
+            raise AssertionError("AIS UDP listener did not bind")
+
+        async def _main():
+            first = AISWorker(asyncio.Queue(), _config(LISTEN_PORT="0"))
+            first_task = asyncio.create_task(first._network_rx())
+            await _wait_until_bound(first)
+            port = first._transport.get_extra_info("sockname")[1]
+
+            await first.close()
+            first_task.cancel()
+            await asyncio.gather(first_task, return_exceptions=True)
+
+            second = AISWorker(
+                asyncio.Queue(), _config(LISTEN_HOST="127.0.0.1", LISTEN_PORT=str(port))
+            )
+            second_task = asyncio.create_task(second._network_rx())
+            try:
+                await _wait_until_bound(second)
+                assert second._transport.get_extra_info("sockname")[1] == port
+            finally:
+                await second.close()
+                second_task.cancel()
+                await asyncio.gather(second_task, return_exceptions=True)
+
+        _in_loop(_main)
+
 
 class TestStatusDegradesVisibly:
     """A pytak without StatusWriter must not take the gateway down.

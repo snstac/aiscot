@@ -1,3 +1,9 @@
+## AISCoT 7.3.1
+
+* Close the local AIS UDP listener before PyTAK rebuilds workers after a TAK
+  transport outage, preventing an in-process reconnect from failing with
+  `EADDRINUSE` on `LISTEN_PORT`.
+
 ## AISCoT 7.3.0
 
 - AIS-catcher style vessel styling (mapping & palette re-implemented from

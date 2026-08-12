@@ -259,7 +259,17 @@ class AISNetworkClient(asyncio.Protocol):
 class AISWorker(pytak.QueueWorker):
     """AIS to TAK worker."""
 
-    __slots__ = ('known_craft_db', 'session', 'feed_url', '_include_all_craft', '_poll_interval', '_host', '_port', 'status')
+    __slots__ = (
+        "known_craft_db",
+        "session",
+        "feed_url",
+        "_include_all_craft",
+        "_poll_interval",
+        "_host",
+        "_port",
+        "_transport",
+        "status",
+    )
 
     def __init__(self, queue: asyncio.Queue, config: ConfigParser) -> None:
         """Initialize an instance of this class."""
@@ -268,6 +278,7 @@ class AISWorker(pytak.QueueWorker):
         self.known_craft_db: dict = {}
         self.session: Optional[aiohttp.ClientSession] = None
         self.feed_url: Optional[str] = None
+        self._transport = None
 
         # Runtime status for Cockpit. systemd gives us /run/aiscot via
         # RuntimeDirectory=, so this lands where the plugin looks for it.
@@ -423,6 +434,7 @@ class AISWorker(pytak.QueueWorker):
             await self._initialize_feed()
         finally:
             heartbeat.cancel()
+            await asyncio.gather(heartbeat, return_exceptions=True)
 
     async def _status_heartbeat(self, interval: float = 5.0) -> None:
         """Keep the status file fresh while no vessels are being heard.
@@ -459,22 +471,41 @@ class AISWorker(pytak.QueueWorker):
 
         self.status.set(listen=f"udp://{self._host}:{self._port}")
 
-        await loop.create_datagram_endpoint(
+        transport, _ = await loop.create_datagram_endpoint(
             lambda: AISNetworkClient(ready, self.queue, self.config, self.status),
             local_addr=(self._host, self._port),
         )
-        await ready.wait()
+        self._transport = transport
+        try:
+            await ready.wait()
 
-        # Re-write now that the socket is actually bound. run()'s startup
-        # write happens before this point and so cannot name the listener;
-        # without this the panel says "listening on: unknown" until the first
-        # heartbeat, and "where is it listening" is the first question asked
-        # when a feed shows nothing.
-        self.status.write(force=True)
+            # Re-write now that the socket is actually bound. run()'s startup
+            # write happens before this point and so cannot name the listener;
+            # without this the panel says "listening on: unknown" until the first
+            # heartbeat, and "where is it listening" is the first question asked
+            # when a feed shows nothing.
+            self.status.write(force=True)
 
-        # Keep the coroutine alive without spinning the CPU
-        while True:
-            await asyncio.sleep(3600)  # Sleep for 1 hour, will wake on events
+            # Keep the coroutine alive without spinning the CPU
+            while True:
+                await asyncio.sleep(3600)  # Sleep for 1 hour, will wake on events
+        finally:
+            await self.close()
+
+    async def close(self) -> None:
+        """Release feed resources before PyTAK rebuilds this client.
+
+        PyTAK reconnects in-process after a TAK transport outage. Without an
+        explicit close hook the UDP listener survives cancellation until the
+        event loop later collects it, so the replacement AISWorker can fail
+        with EADDRINUSE on the same LISTEN_PORT.
+        """
+        transport, self._transport = self._transport, None
+        if transport is not None:
+            transport.close()
+            await asyncio.sleep(0)
+        if self.session is not None and not self.session.closed:
+            await self.session.close()
 
     async def _poll_feed(self) -> None:
         """Poll a feed URL for AIS data."""

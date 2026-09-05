@@ -20,10 +20,30 @@
 
 import io
 import xml.etree.ElementTree as ET
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
 import aiscot
+
+
+@pytest.mark.parametrize("value", ["0", "false", "False", "no", "off"])
+def test_sensor_beacon_switch(value):
+    """Receiver beacons default on and accept common false values."""
+    assert aiscot.functions.sensor_beacon_enabled({})
+    assert not aiscot.functions.sensor_beacon_enabled({"SENSOR_BEACON": value})
+
+
+def test_create_tasks_can_omit_sensor_beacon():
+    """Disabling the receiver beacon keeps vessel processing enabled."""
+    clitool = SimpleNamespace(tx_queue=object())
+    with patch.object(aiscot, "AISWorker", return_value="vessels"), patch.object(
+        aiscot, "SensorWorker", return_value="receiver"
+    ) as sensor_worker:
+        tasks = aiscot.functions.create_tasks({"SENSOR_BEACON": "0"}, clitool)
+    assert tasks == {"vessels"}
+    sensor_worker.assert_not_called()
 
 
 @pytest.fixture

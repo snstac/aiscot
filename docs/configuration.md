@@ -32,6 +32,11 @@ AISCOT has the following built-in configuration parameters:
 
     CoT Stale period ("timeout"), in seconds.
 
+* **`SENSOR_BEACON`**:
+    * Default: ``1``
+
+    Set to ``0`` to disable the periodic receiver marker. Vessel tracks remain enabled.
+
 * **`COT_TYPE`**:
     * Default: ``a-u-S-X-M``
     

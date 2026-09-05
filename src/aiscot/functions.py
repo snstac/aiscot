@@ -48,6 +48,12 @@ def cfg_bool(value, default: bool = False) -> bool:
     return str(value).strip().lower() in pytak.BOOLEAN_TRUTH
 
 
+def sensor_beacon_enabled(config: Union[dict, SectionProxy]) -> bool:
+    """Return whether the periodic receiver beacon is enabled."""
+    value = config.get("SENSOR_BEACON", "1")
+    return str(value).strip().lower() not in {"0", "false", "no", "off"}
+
+
 def create_tasks(
     config: Union[dict, SectionProxy], clitool: pytak.CLITool
 ) -> Set[pytak.Worker,]:
@@ -73,7 +79,8 @@ def create_tasks(
         Set of coroutine tasks.
     """
     tasks = set([aiscot.AISWorker(clitool.tx_queue, config)])
-    tasks.add(aiscot.SensorWorker(clitool.tx_queue, config))
+    if sensor_beacon_enabled(config):
+        tasks.add(aiscot.SensorWorker(clitool.tx_queue, config))
     return tasks
 
 

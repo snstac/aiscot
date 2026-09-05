@@ -1,3 +1,8 @@
+## AISCoT 7.3.2
+
+- Add `SENSOR_BEACON=0` to disable the periodic receiver marker without
+  disabling vessel tracks.
+
 ## AISCoT 7.3.1
 
 * Close the local AIS UDP listener before PyTAK rebuilds workers after a TAK
